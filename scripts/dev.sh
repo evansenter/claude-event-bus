@@ -3,9 +3,29 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+LABEL="com.evansenter.claude-event-bus"
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
 
 cd "$PROJECT_DIR"
 source .venv/bin/activate
+
+# Stop LaunchAgent if running (to free port 8080)
+LAUNCHAGENT_WAS_RUNNING=false
+if launchctl list 2>/dev/null | grep -q "$LABEL"; then
+    echo "Stopping LaunchAgent for dev mode..."
+    launchctl unload "$PLIST" 2>/dev/null
+    LAUNCHAGENT_WAS_RUNNING=true
+fi
+
+# Restart LaunchAgent on exit
+cleanup() {
+    if [[ "$LAUNCHAGENT_WAS_RUNNING" == "true" && -f "$PLIST" ]]; then
+        echo ""
+        echo "Restarting LaunchAgent..."
+        launchctl load "$PLIST"
+    fi
+}
+trap cleanup EXIT
 
 echo "Starting event bus in dev mode (Ctrl+C to stop)..."
 echo "Add to Claude Code: claude mcp add --transport http --scope user event-bus http://127.0.0.1:8080/mcp"
