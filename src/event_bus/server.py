@@ -348,6 +348,15 @@ def publish_event(
         channel=channel,
     )
 
+    # In dev mode, show system notification for every event
+    # (calls _send_notification directly to avoid recursion)
+    if os.environ.get("DEV_MODE"):
+        truncated = payload[:50] + "..." if len(payload) > 50 else payload
+        _send_notification(
+            title=f"📡 {event_type}",
+            message=f"[{channel}] {truncated}",
+        )
+
     return {
         "event_id": event.id,
         "event_type": event_type,
