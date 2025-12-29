@@ -15,7 +15,7 @@ if launchctl list 2>/dev/null | grep -q "$LABEL"; then
     echo "Stopping LaunchAgent for dev mode..."
     launchctl unload "$PLIST" 2>/dev/null
     LAUNCHAGENT_WAS_RUNNING=true
-    osascript -e 'display notification "Stopped for dev mode" with title "Event Bus"' 2>/dev/null
+    osascript -e 'display notification "Stopped for dev mode" with title "Evan Bus"' 2>/dev/null
 fi
 
 # Restart LaunchAgent on exit
@@ -24,7 +24,7 @@ cleanup() {
         echo ""
         echo "Restarting LaunchAgent..."
         launchctl load "$PLIST"
-        osascript -e 'display notification "LaunchAgent restarted" with title "Event Bus"' 2>/dev/null
+        osascript -e 'display notification "LaunchAgent restarted" with title "Evan Bus"' 2>/dev/null
     fi
 }
 trap cleanup EXIT

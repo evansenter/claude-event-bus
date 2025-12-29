@@ -11,7 +11,10 @@ Provides tools for cross-session Claude Code communication:
 import json
 import logging
 import os
+import platform
+import shutil
 import socket
+import subprocess
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -48,6 +51,41 @@ def _extract_repo_from_cwd(cwd: str) -> str:
             return parts[idx - 1]
     # Fall back to last directory component
     return parts[-1] if parts else "unknown"
+
+
+def _send_notification(title: str, message: str, sound: bool = False) -> bool:
+    """Send a system notification. Returns True if successful."""
+    system = platform.system()
+
+    try:
+        if system == "Darwin":  # macOS
+            script = f'display notification "{message}" with title "{title}"'
+            if sound:
+                script += ' sound name "default"'
+            subprocess.run(
+                ["osascript", "-e", script],
+                check=True,
+                capture_output=True,
+            )
+            return True
+
+        elif system == "Linux":
+            # Check for notify-send
+            if shutil.which("notify-send"):
+                cmd = ["notify-send", title, message]
+                subprocess.run(cmd, check=True, capture_output=True)
+                return True
+            else:
+                logger.warning("notify-send not found on Linux")
+                return False
+
+        else:
+            logger.warning(f"Notifications not supported on {system}")
+            return False
+
+    except subprocess.CalledProcessError as e:
+        logger.error(f"Notification failed: {e}")
+        return False
 
 
 @mcp.tool()
@@ -255,6 +293,29 @@ def unregister_session(session_id: str) -> dict:
         "success": True,
         "session_id": session_id,
         "active_sessions": storage.session_count(),
+    }
+
+
+@mcp.tool()
+def notify(title: str, message: str, sound: bool = False) -> dict:
+    """Send a system notification to the user.
+
+    Use this to alert the user about important events like task completion,
+    errors, or when help is needed.
+
+    Args:
+        title: Notification title (short, e.g., "Build Complete")
+        message: Notification body (details)
+        sound: Whether to play a sound (default: False)
+
+    Returns:
+        Success status
+    """
+    success = _send_notification(title, message, sound)
+    return {
+        "success": success,
+        "title": title,
+        "message": message,
     }
 
 
