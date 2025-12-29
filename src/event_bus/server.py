@@ -256,7 +256,7 @@ def main():
     )
 
     # FastMCP provides an ASGI app
-    uvicorn.run(mcp.get_app(), host=host, port=port)
+    uvicorn.run(mcp.http_app(), host=host, port=port)
 
 
 if __name__ == "__main__":
