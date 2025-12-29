@@ -9,6 +9,7 @@ Provides tools for cross-session Claude Code communication:
 """
 
 import os
+import socket
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -100,7 +101,7 @@ def register_session(
     session_id = str(uuid.uuid4())[:8]
     now = datetime.now()
 
-    machine = machine or os.environ.get("HOSTNAME", "unknown")
+    machine = machine or socket.gethostname()
     cwd = cwd or os.environ.get("PWD", os.getcwd())
     repo = _extract_repo_from_cwd(cwd)
 

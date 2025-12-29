@@ -41,3 +41,7 @@ htmlcov/
 *.db
 *.sqlite
 .env.local
+
+# Runtime files
+.event-bus.pid
+event-bus.log
