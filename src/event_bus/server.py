@@ -33,8 +33,8 @@ logger = logging.getLogger("event-bus")
 if os.environ.get("DEV_MODE"):
     logger.setLevel(logging.DEBUG)
 
-# Initialize MCP server (stateless_http=True allows resilience to server restarts)
-mcp = FastMCP("event-bus", stateless_http=True)
+# Initialize MCP server
+mcp = FastMCP("event-bus")
 
 # SQLite-backed storage (persists across restarts)
 storage = SQLiteStorage()
@@ -325,27 +325,6 @@ def get_events(
 
 
 @mcp.tool()
-def heartbeat(session_id: str) -> dict:
-    """Send a heartbeat to keep session alive.
-
-    Args:
-        session_id: Your session ID from register_session
-
-    Returns:
-        Updated session info
-    """
-    now = datetime.now()
-    if not storage.update_heartbeat(session_id, now):
-        return {"error": "Session not found", "session_id": session_id}
-
-    return {
-        "session_id": session_id,
-        "last_heartbeat": now.isoformat(),
-        "active_sessions": storage.session_count(),
-    }
-
-
-@mcp.tool()
 def unregister_session(session_id: str) -> dict:
     """Unregister a session from the event bus.
 
@@ -474,7 +453,8 @@ class RequestLoggingMiddleware:
 
 def create_app():
     """Create the ASGI app with optional logging middleware."""
-    app = mcp.http_app()
+    # stateless_http=True allows resilience to server restarts
+    app = mcp.http_app(stateless_http=True)
 
     if os.environ.get("DEV_MODE"):
         logger.info("Dev mode enabled - logging all requests")
