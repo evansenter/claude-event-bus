@@ -17,8 +17,8 @@ from typing import Optional
 
 from fastmcp import FastMCP
 
-# Initialize MCP server
-mcp = FastMCP("event-bus")
+# Initialize MCP server (stateless_http=True allows resilience to server restarts)
+mcp = FastMCP("event-bus", stateless_http=True)
 
 
 # In-memory storage (MVP - will add persistence later)
