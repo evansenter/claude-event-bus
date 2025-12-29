@@ -35,13 +35,16 @@ class Event:
     payload: str
     session_id: str
     timestamp: datetime
+    channel: str = "all"  # Target channel for the event
 
 
 # Default database path
 DEFAULT_DB_PATH = Path.home() / ".claude" / "event-bus.db"
 
-# Session timeout in seconds (30 minutes without activity = dead)
-SESSION_TIMEOUT = 1800
+# Session timeout in seconds (7 days without activity = dead)
+# Long timeout supports multi-day sessions; local crashed sessions are
+# cleaned up faster via PID liveness check in list_sessions()
+SESSION_TIMEOUT = 604800  # 7 days
 
 # Event retention settings
 MAX_EVENTS = 1000  # Keep last N events
@@ -100,9 +103,15 @@ class SQLiteStorage:
                     event_type TEXT NOT NULL,
                     payload TEXT NOT NULL,
                     session_id TEXT NOT NULL,
-                    timestamp TIMESTAMP NOT NULL
+                    timestamp TIMESTAMP NOT NULL,
+                    channel TEXT NOT NULL DEFAULT 'all'
                 )
             """)
+            # Add channel column if upgrading from older schema
+            try:
+                conn.execute("ALTER TABLE events ADD COLUMN channel TEXT NOT NULL DEFAULT 'all'")
+            except sqlite3.OperationalError:
+                pass  # Column already exists
             # Index for efficient event polling
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_events_id ON events(id)
@@ -218,16 +227,18 @@ class SQLiteStorage:
 
     # Event operations
 
-    def add_event(self, event_type: str, payload: str, session_id: str) -> Event:
+    def add_event(
+        self, event_type: str, payload: str, session_id: str, channel: str = "all"
+    ) -> Event:
         """Add a new event and return it with assigned ID."""
         now = datetime.now()
         with self._connect() as conn:
             cursor = conn.execute(
                 """
-                INSERT INTO events (event_type, payload, session_id, timestamp)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO events (event_type, payload, session_id, timestamp, channel)
+                VALUES (?, ?, ?, ?, ?)
                 """,
-                (event_type, payload, session_id, now),
+                (event_type, payload, session_id, now, channel),
             )
             event_id = cursor.lastrowid
 
@@ -240,20 +251,45 @@ class SQLiteStorage:
                 payload=payload,
                 session_id=session_id,
                 timestamp=now,
+                channel=channel,
             )
 
-    def get_events(self, since_id: int = 0, limit: int = 50) -> list[Event]:
-        """Get events since a given event ID."""
+    def get_events(
+        self,
+        since_id: int = 0,
+        limit: int = 50,
+        channels: Optional[list[str]] = None,
+    ) -> list[Event]:
+        """Get events since a given event ID.
+
+        Args:
+            since_id: Return events with ID greater than this
+            limit: Maximum number of events to return
+            channels: Optional list of channels to filter by (None = all events)
+        """
         with self._connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT * FROM events
-                WHERE id > ?
-                ORDER BY id ASC
-                LIMIT ?
-                """,
-                (since_id, limit),
-            ).fetchall()
+            if channels:
+                # Filter by channels
+                placeholders = ",".join("?" * len(channels))
+                rows = conn.execute(
+                    f"""
+                    SELECT * FROM events
+                    WHERE id > ? AND channel IN ({placeholders})
+                    ORDER BY id ASC
+                    LIMIT ?
+                    """,
+                    (since_id, *channels, limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT * FROM events
+                    WHERE id > ?
+                    ORDER BY id ASC
+                    LIMIT ?
+                    """,
+                    (since_id, limit),
+                ).fetchall()
 
             return [
                 Event(
@@ -262,6 +298,7 @@ class SQLiteStorage:
                     payload=row["payload"],
                     session_id=row["session_id"],
                     timestamp=row["timestamp"],
+                    channel=row["channel"] if "channel" in row.keys() else "all",
                 )
                 for row in rows
             ]

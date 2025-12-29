@@ -224,14 +224,22 @@ def list_sessions() -> list[dict]:
 
 @mcp.tool()
 def publish_event(
-    event_type: str, payload: str, session_id: Optional[str] = None
+    event_type: str,
+    payload: str,
+    session_id: Optional[str] = None,
+    channel: str = "all",
 ) -> dict:
-    """Publish an event to all sessions.
+    """Publish an event to a channel.
 
     Args:
         event_type: Type of event (e.g., 'task_completed', 'help_needed')
         payload: Event payload/message
         session_id: Your session ID (for attribution and auto-heartbeat)
+        channel: Target channel (default: "all" for broadcast)
+            - "all": Broadcast to everyone
+            - "session:{id}": Direct message to specific session
+            - "repo:{name}": All sessions in that repo
+            - "machine:{name}": All sessions on that machine
 
     Returns:
         The created event with its ID
@@ -243,13 +251,36 @@ def publish_event(
         event_type=event_type,
         payload=payload,
         session_id=session_id or "anonymous",
+        channel=channel,
     )
 
     return {
         "event_id": event.id,
         "event_type": event_type,
         "payload": payload,
+        "channel": channel,
     }
+
+
+def _get_implicit_channels(session_id: Optional[str]) -> Optional[list[str]]:
+    """Get the channels a session is implicitly subscribed to.
+
+    Returns None if no session (returns all events), or a list of channels.
+    """
+    if not session_id:
+        return None  # No filtering, return all events
+
+    session = storage.get_session(session_id)
+    if not session:
+        return None  # Session not found, return all events
+
+    # Implicit subscriptions based on session attributes
+    return [
+        "all",  # Broadcasts
+        f"session:{session_id}",  # Direct messages to this session
+        f"repo:{session.repo}",  # Same repo
+        f"machine:{session.machine}",  # Same machine
+    ]
 
 
 @mcp.tool()
@@ -258,10 +289,16 @@ def get_events(
 ) -> list[dict]:
     """Get events since a given event ID.
 
+    Events are filtered to channels the session is subscribed to:
+    - "all": Broadcasts (everyone receives)
+    - "session:{your_id}": Direct messages to you
+    - "repo:{your_repo}": Events for your repo
+    - "machine:{your_machine}": Events for your machine
+
     Args:
         since_id: Return events with ID greater than this (default: 0 = all)
         limit: Maximum number of events to return (default: 50)
-        session_id: Your session ID (for auto-heartbeat)
+        session_id: Your session ID (for auto-heartbeat and channel filtering)
 
     Returns:
         List of events since the given ID
@@ -271,6 +308,9 @@ def get_events(
 
     storage.cleanup_stale_sessions()
 
+    # Get channels this session is subscribed to
+    channels = _get_implicit_channels(session_id)
+
     return [
         {
             "id": e.id,
@@ -278,8 +318,9 @@ def get_events(
             "payload": e.payload,
             "session_id": e.session_id,
             "timestamp": e.timestamp.isoformat(),
+            "channel": e.channel,
         }
-        for e in storage.get_events(since_id=since_id, limit=limit)
+        for e in storage.get_events(since_id=since_id, limit=limit, channels=channels)
     ]
 
 

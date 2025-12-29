@@ -34,18 +34,45 @@ pytest
 |------|---------|
 | `register_session(name, machine?, cwd?, pid?)` | Register session, get session_id |
 | `list_sessions()` | List all active sessions |
-| `publish_event(type, payload, session_id?)` | Broadcast event |
-| `get_events(since_id?, limit?)` | Poll for events |
+| `publish_event(type, payload, session_id?, channel?)` | Publish event to channel |
+| `get_events(since_id?, limit?, session_id?)` | Poll for events (filtered by subscriptions) |
 | `heartbeat(session_id)` | Keep session alive |
 | `unregister_session(session_id)` | Clean up session on exit |
+| `notify(title, message, sound?)` | Send system notification |
+
+## Channel-Based Messaging
+
+Events can be targeted to specific channels:
+
+| Channel | Who receives |
+|---------|--------------|
+| `all` | Everyone (default, broadcast) |
+| `session:{id}` | Direct message to one session |
+| `repo:{name}` | All sessions in that repo |
+| `machine:{name}` | All sessions on that machine |
+
+Sessions are auto-subscribed based on their attributes - no explicit subscribe needed.
+
+```python
+# Broadcast (default)
+publish_event("status", "Done!", channel="all")
+
+# Direct message
+publish_event("help", "Review auth.ts?", channel="session:abc123")
+
+# Repo-scoped
+publish_event("api_ready", "API merged", channel="repo:my-project")
+```
 
 ## Design Decisions
 
 - **Polling over push**: MCP is request/response, so sessions poll with `get_events(since_id)`
-- **Heartbeat-based cleanup**: Sessions timeout after 2 minutes without heartbeat
+- **Session cleanup**: 7-day heartbeat timeout + PID liveness checks for local sessions
+- **Auto-heartbeat**: `publish_event` and `get_events` auto-refresh heartbeat
 - **SQLite persistence**: State persists across restarts in `~/.claude/event-bus.db`
 - **Event retention**: Keeps last 1000 events, auto-cleans on write
 - **Localhost binding**: Binds to 127.0.0.1 by default for security
+- **Implicit subscriptions**: No explicit subscribe - sessions auto-subscribed to relevant channels
 
 ## Configuration
 
