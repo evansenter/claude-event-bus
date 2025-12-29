@@ -1,5 +1,6 @@
 """SQLite storage backend for event bus persistence."""
 
+import logging
 import os
 import sqlite3
 from contextlib import contextmanager
@@ -7,6 +8,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+
+logger = logging.getLogger("event-bus")
 
 
 @dataclass
@@ -191,7 +194,10 @@ class SQLiteStorage:
             cursor = conn.execute(
                 "DELETE FROM sessions WHERE last_heartbeat < ?", (cutoff_dt,)
             )
-            return cursor.rowcount
+            count = cursor.rowcount
+            if count > 0:
+                logger.warning(f"Cleaned up {count} stale session(s)")
+            return count
 
     def session_count(self) -> int:
         """Get count of active sessions."""
@@ -249,9 +255,12 @@ class SQLiteStorage:
                 for row in rows
             ]
 
-    def _cleanup_events(self, conn: sqlite3.Connection) -> None:
-        """Remove old events, keeping only the last MAX_EVENTS."""
-        conn.execute(
+    def _cleanup_events(self, conn: sqlite3.Connection) -> int:
+        """Remove old events, keeping only the last MAX_EVENTS.
+
+        Returns the number of events removed.
+        """
+        cursor = conn.execute(
             """
             DELETE FROM events
             WHERE id NOT IN (
@@ -260,6 +269,10 @@ class SQLiteStorage:
             """,
             (MAX_EVENTS,),
         )
+        count = cursor.rowcount
+        if count > 0:
+            logger.warning(f"Cleaned up {count} old event(s)")
+        return count
 
     def get_last_event_id(self) -> int:
         """Get the ID of the most recent event, or 0 if none."""
