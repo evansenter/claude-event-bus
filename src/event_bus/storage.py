@@ -167,6 +167,17 @@ class SQLiteStorage:
                 return self._row_to_session(row)
             return None
 
+    def delete_session(self, session_id: str) -> bool:
+        """Delete a session by ID.
+
+        Returns True if the session was deleted, False if not found.
+        """
+        with self._connect() as conn:
+            cursor = conn.execute(
+                "DELETE FROM sessions WHERE id = ?", (session_id,)
+            )
+            return cursor.rowcount > 0
+
     def update_heartbeat(self, session_id: str, timestamp: datetime) -> bool:
         """Update session heartbeat. Returns True if session exists."""
         with self._connect() as conn:

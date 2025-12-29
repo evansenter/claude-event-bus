@@ -225,6 +225,39 @@ def heartbeat(session_id: str) -> dict:
     }
 
 
+@mcp.tool()
+def unregister_session(session_id: str) -> dict:
+    """Unregister a session from the event bus.
+
+    Call this when a Claude session is ending to clean up immediately
+    rather than waiting for heartbeat timeout.
+
+    Args:
+        session_id: Your session ID from register_session
+
+    Returns:
+        Success status
+    """
+    session = storage.get_session(session_id)
+    if not session:
+        return {"error": "Session not found", "session_id": session_id}
+
+    storage.delete_session(session_id)
+
+    # Publish unregister event
+    storage.add_event(
+        event_type="session_unregistered",
+        payload=f"{session.name} ended on {session.machine}",
+        session_id=session_id,
+    )
+
+    return {
+        "success": True,
+        "session_id": session_id,
+        "active_sessions": storage.session_count(),
+    }
+
+
 class RequestLoggingMiddleware:
     """ASGI middleware that logs request and response bodies."""
 

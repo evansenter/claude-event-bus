@@ -32,11 +32,12 @@ pytest
 
 | Tool | Purpose |
 |------|---------|
-| `register_session(name, machine?, cwd?)` | Register session, get session_id |
+| `register_session(name, machine?, cwd?, pid?)` | Register session, get session_id |
 | `list_sessions()` | List all active sessions |
 | `publish_event(type, payload, session_id?)` | Broadcast event |
 | `get_events(since_id?, limit?)` | Poll for events |
 | `heartbeat(session_id)` | Keep session alive |
+| `unregister_session(session_id)` | Clean up session on exit |
 
 ## Design Decisions
 
