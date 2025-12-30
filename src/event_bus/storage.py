@@ -41,6 +41,16 @@ class Session:
     last_heartbeat: datetime
     pid: int | None = None  # Client process ID for deduplication
 
+    def get_project_name(self) -> str:
+        """Get the project name, preferring explicit repo over cwd basename.
+
+        Returns:
+            Project name derived from repo field, or the last directory component of cwd
+        """
+        import os
+
+        return self.repo or os.path.basename(self.cwd or "unknown")
+
 
 @dataclass
 class Event:
