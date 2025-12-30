@@ -262,6 +262,12 @@ def _send_notification(title: str, message: str, sound: bool = False) -> bool:
         return False
 
 
+def _dev_notify(tool_name: str, summary: str) -> None:
+    """Send a notification in dev mode for tool calls."""
+    if os.environ.get("DEV_MODE"):
+        _send_notification(f"🔧 {tool_name}", summary)
+
+
 @mcp.tool()
 def register_session(
     name: str,
@@ -299,6 +305,7 @@ def register_session(
         existing.name = name
         existing.last_heartbeat = now
         storage.add_session(existing)  # INSERT OR REPLACE
+        _dev_notify("register_session", f"{name} resumed → {existing.id}")
         return {
             "session_id": existing.id,
             "name": name,
@@ -330,7 +337,7 @@ def register_session(
         session_id=session_id,
     )
 
-    return {
+    result = {
         "session_id": session_id,
         "name": name,
         "machine": machine,
@@ -339,6 +346,8 @@ def register_session(
         "active_sessions": storage.session_count(),
         "resumed": False,
     }
+    _dev_notify("register_session", f"{name} → {session_id}")
+    return result
 
 
 @mcp.tool()
@@ -378,6 +387,7 @@ def list_sessions() -> list[dict]:
             }
         )
 
+    _dev_notify("list_sessions", f"{len(results)} active")
     return results
 
 
@@ -413,14 +423,8 @@ def publish_event(
         channel=channel,
     )
 
-    # In dev mode, show system notification for every event
-    # (calls _send_notification directly to avoid recursion)
-    if os.environ.get("DEV_MODE"):
-        truncated = payload[:50] + "..." if len(payload) > 50 else payload
-        _send_notification(
-            title=f"📡 {event_type}",
-            message=f"[{channel}] {truncated}",
-        )
+    truncated = payload[:50] + "..." if len(payload) > 50 else payload
+    _dev_notify("publish_event", f"{event_type} [{channel}] {truncated}")
 
     return {
         "event_id": event.id,
@@ -477,7 +481,7 @@ def get_events(since_id: int = 0, limit: int = 50, session_id: str | None = None
     # Get channels this session is subscribed to
     channels = _get_implicit_channels(session_id)
 
-    return [
+    events = [
         {
             "id": e.id,
             "event_type": e.event_type,
@@ -488,6 +492,8 @@ def get_events(since_id: int = 0, limit: int = 50, session_id: str | None = None
         }
         for e in storage.get_events(since_id=since_id, limit=limit, channels=channels)
     ]
+    _dev_notify("get_events", f"{len(events)} events (since {since_id})")
+    return events
 
 
 @mcp.tool()
@@ -505,6 +511,7 @@ def unregister_session(session_id: str) -> dict:
     """
     session = storage.get_session(session_id)
     if not session:
+        _dev_notify("unregister_session", f"{session_id} not found")
         return {"error": "Session not found", "session_id": session_id}
 
     storage.delete_session(session_id)
@@ -516,6 +523,7 @@ def unregister_session(session_id: str) -> dict:
         session_id=session_id,
     )
 
+    _dev_notify("unregister_session", f"{session.name} ({session_id})")
     return {
         "success": True,
         "session_id": session_id,
