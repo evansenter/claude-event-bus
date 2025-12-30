@@ -109,8 +109,9 @@ The LaunchAgent and dev.sh set `EVENT_BUS_ICON` automatically.
 | Script | Purpose |
 |--------|---------|
 | `install-launchagent.sh` | Install as macOS LaunchAgent (auto-start) + CLI |
-| `install-cli.sh` | Install CLI to ~/.local/bin for hooks/scripts |
-| `uninstall-launchagent.sh` | Remove LaunchAgent |
+| `install-cli.sh` | Install CLI symlink to ~/.local/bin |
+| `uninstall-launchagent.sh` | Remove LaunchAgent + CLI |
+| `uninstall-cli.sh` | Remove CLI symlink only |
 | `dev.sh` | Run in foreground with auto-reload |
 
 ## Icon Generation

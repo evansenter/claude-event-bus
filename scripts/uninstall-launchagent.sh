@@ -18,6 +18,11 @@ echo "Removing plist..."
 rm -f "$PLIST_DEST"
 
 echo "Event bus LaunchAgent uninstalled."
+
+# Also uninstall CLI
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+"$SCRIPT_DIR/uninstall-cli.sh"
+
 echo ""
 echo "Note: Logs remain at ~/.claude/event-bus.log"
 osascript -e 'display notification "LaunchAgent uninstalled" with title "Evan Bus"' 2>/dev/null
