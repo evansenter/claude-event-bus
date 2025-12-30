@@ -41,6 +41,7 @@ htmlcov/
 *.db
 *.sqlite
 .env.local
+.claude/settings.local.json
 
 # Runtime files
 .event-bus.pid
