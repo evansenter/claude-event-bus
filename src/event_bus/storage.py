@@ -47,9 +47,7 @@ class Session:
         Returns:
             Project name derived from repo field, or the last directory component of cwd
         """
-        import os
-
-        return self.repo or os.path.basename(self.cwd or "unknown")
+        return self.repo or os.path.basename(self.cwd or "unknown") or "unknown"
 
 
 @dataclass
