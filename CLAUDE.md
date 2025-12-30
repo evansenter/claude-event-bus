@@ -151,5 +151,4 @@ cargo run --bin remove-bg    # Remove background
 ## Future Work
 
 - Tailscale support for multi-machine
-- File locking tools for conflict detection
 - SSE streaming for lower latency

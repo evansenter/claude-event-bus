@@ -120,7 +120,6 @@ cargo run --bin remove-bg    # Remove background
 - [x] LaunchAgent for auto-start
 - [x] CLI wrapper for shell scripts
 - [ ] Tailscale support for multi-machine
-- [ ] File locking for conflict detection
 
 ## Related
 
