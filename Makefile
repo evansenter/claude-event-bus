@@ -1,4 +1,4 @@
-.PHONY: check fmt lint test clean install dev venv
+.PHONY: check fmt lint test clean install uninstall dev venv
 
 # Run all quality gates (format check, lint, tests)
 check: fmt lint test
@@ -54,3 +54,19 @@ install: venv
 	@echo ""
 	@echo "Make sure ~/.local/bin is in your PATH:"
 	@echo '  export PATH="$$HOME/.local/bin:$$PATH"'
+
+# Uninstall: LaunchAgent + CLI + MCP config
+uninstall:
+	@echo "Uninstalling..."
+	./scripts/uninstall-launchagent.sh
+	@echo ""
+	@echo "Removing from Claude Code..."
+	@CLAUDE_CMD=$$(command -v claude || echo "$$HOME/.local/bin/claude"); \
+	if [ -x "$$CLAUDE_CMD" ]; then \
+		$$CLAUDE_CMD mcp remove --scope user event-bus 2>/dev/null && \
+			echo "Removed event-bus from Claude Code" || \
+			echo "event-bus not found in Claude Code"; \
+	fi
+	@echo ""
+	@echo "Uninstall complete!"
+	@echo "Note: venv and source code remain in place."
