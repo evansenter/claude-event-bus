@@ -527,6 +527,16 @@ def publish_event(
     # Auto-refresh heartbeat when session publishes
     _auto_heartbeat(session_id)
 
+    # Validate channel format for known channel types
+    if channel not in ["all"] and ":" in channel:
+        channel_type, _, channel_value = channel.partition(":")
+        if channel_type in ["session", "repo", "machine"]:
+            if not channel_value:
+                logger.warning(
+                    f"Invalid {channel_type} channel format: '{channel}'. "
+                    f"Expected '{channel_type}:<value>'"
+                )
+
     # Auto-notify on direct messages (DMs)
     if channel.startswith("session:"):
         parts = channel.split(":", 1)

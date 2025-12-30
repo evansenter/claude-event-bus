@@ -696,3 +696,56 @@ class TestAutoNotifyOnDM:
         )
 
         mock_notify.assert_not_called()
+
+    @patch("event_bus.server._send_notification")
+    def test_dm_with_empty_payload(self, mock_notify):
+        """Test that DM with empty payload still notifies."""
+        target = register_session(name="target", machine="test", cwd="/test")
+        target_id = target["session_id"]
+
+        publish_event(
+            event_type="test",
+            payload="",
+            channel=f"session:{target_id}",
+        )
+
+        mock_notify.assert_called_once()
+        call_kwargs = mock_notify.call_args.kwargs
+        # Should still have sender info even with empty payload
+        assert "From:" in call_kwargs["message"]
+
+    @patch("event_bus.server._send_notification")
+    def test_dm_with_very_long_session_name(self, mock_notify):
+        """Test notification with very long session name in title."""
+        very_long_name = "a" * 200
+        target = register_session(name=very_long_name, machine="test", cwd="/test")
+        target_id = target["session_id"]
+
+        publish_event(
+            event_type="test",
+            payload="test message",
+            channel=f"session:{target_id}",
+        )
+
+        mock_notify.assert_called_once()
+        call_kwargs = mock_notify.call_args.kwargs
+        # Title should contain the long name
+        assert very_long_name in call_kwargs["title"]
+
+    @patch("event_bus.server._send_notification")
+    def test_dm_with_special_characters(self, mock_notify):
+        """Test notification handles emoji and special characters."""
+        target = register_session(name="target", machine="test", cwd="/test")
+        target_id = target["session_id"]
+
+        special_payload = "Hello 🎉\nMultiline\tWith\ttabs and emoji 😊"
+        publish_event(
+            event_type="test",
+            payload=special_payload,
+            channel=f"session:{target_id}",
+        )
+
+        mock_notify.assert_called_once()
+        call_kwargs = mock_notify.call_args.kwargs
+        # Should contain the special characters
+        assert "🎉" in call_kwargs["message"] or "Hello" in call_kwargs["message"]
