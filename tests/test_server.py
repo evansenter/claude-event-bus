@@ -13,7 +13,11 @@ _temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
 os.environ["EVENT_BUS_DB"] = _temp_db.name
 
 from event_bus import server  # noqa: E402
-from event_bus.helpers import extract_repo_from_cwd, is_pid_alive  # noqa: E402
+from event_bus.helpers import (  # noqa: E402
+    _escape_applescript_string,
+    extract_repo_from_cwd,
+    is_pid_alive,
+)
 from event_bus.storage import Session, SQLiteStorage  # noqa: E402
 
 # Access the underlying functions from FunctionTool wrappers
@@ -56,6 +60,46 @@ class TestExtractRepoFromCwd:
     def test_empty_path(self):
         """Test empty path."""
         assert extract_repo_from_cwd("") == "unknown"
+
+
+class TestEscapeApplescriptString:
+    """Tests for _escape_applescript_string security helper."""
+
+    def test_backslash_escaping(self):
+        """Test backslash characters are escaped."""
+        assert _escape_applescript_string("path\\to\\file") == "path\\\\to\\\\file"
+
+    def test_quote_escaping(self):
+        """Test double quote characters are escaped."""
+        assert _escape_applescript_string('say "hello"') == 'say \\"hello\\"'
+
+    def test_combined_escaping_order(self):
+        """Test backslashes are escaped before quotes (order matters)."""
+        # Input: test\"  (backslash then quote)
+        # After backslash escape: test\\"
+        # After quote escape: test\\"
+        assert _escape_applescript_string('test\\"') == 'test\\\\\\"'
+
+    def test_injection_attempt(self):
+        """Test that command injection attempts are neutralized."""
+        # Classic AppleScript injection: break out of string and execute shell
+        malicious = '"; do shell script "rm -rf /"'
+        escaped = _escape_applescript_string(malicious)
+        # Quotes should be escaped, preventing breakout
+        assert '\\"' in escaped
+        assert '" do shell script "' not in escaped
+
+    def test_empty_string(self):
+        """Test empty string passes through."""
+        assert _escape_applescript_string("") == ""
+
+    def test_normal_text(self):
+        """Test normal text without special chars passes through."""
+        assert _escape_applescript_string("Hello World") == "Hello World"
+
+    def test_unicode_text(self):
+        """Test Unicode characters pass through unchanged."""
+        assert _escape_applescript_string("Hello 世界 🎉") == "Hello 世界 🎉"
 
 
 class TestSessionGetProjectName:
