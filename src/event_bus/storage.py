@@ -165,6 +165,10 @@ class SQLiteStorage:
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_sessions_heartbeat ON sessions(last_heartbeat)
             """)
+            # Index for efficient session deduplication lookup (machine, client_id)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_sessions_dedup ON sessions(machine, client_id)
+            """)
 
     # Session operations
 
