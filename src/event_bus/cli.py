@@ -184,11 +184,11 @@ def cmd_events(args):
     # Determine last_id for state tracking BEFORE filtering
     # This ensures we track the actual highest ID from the server, not filtered results.
     # Otherwise, excluded events would be re-fetched on every poll.
-    last_id = max(e["id"] for e in result)
+    last_id = max((e["id"] for e in result), default=since_id)
 
     # Apply --exclude-types filter (after computing last_id)
     if args.exclude_types:
-        exclude_set = set(args.exclude_types.split(","))
+        exclude_set = {t.strip() for t in args.exclude_types.split(",")}
         result = [e for e in result if e["event_type"] not in exclude_set]
 
     # Handle --track-state: write new last_id to file
