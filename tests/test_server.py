@@ -571,6 +571,21 @@ class TestGetEventsOrdering:
         # Chronological order
         assert types.index("after_registration_1") < types.index("after_registration_2")
 
+    def test_since_id_future_returns_empty(self):
+        """Test that since_id beyond current events returns empty list."""
+        # Clear storage
+        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+
+        # Publish some events
+        result = publish_event("test", "payload")
+        last_id = result["event_id"]
+
+        # Query with a future ID that doesn't exist yet
+        events = get_events(since_id=last_id + 1000)
+
+        # Should return empty list
+        assert events == []
+
 
 class TestUnregisterSession:
     """Tests for unregister_session tool."""
