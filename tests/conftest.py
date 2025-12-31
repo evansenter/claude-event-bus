@@ -37,7 +37,11 @@ def temp_db():
 
 @pytest.fixture
 def storage(temp_db):
-    """Create a storage instance with a temporary database."""
+    """Create a storage instance with a temporary database.
+
+    Note: Import is inside fixture to avoid triggering module-level storage
+    initialization before EVENT_BUS_DB is set by pytest_configure.
+    """
     from event_bus.storage import SQLiteStorage
 
     return SQLiteStorage(db_path=temp_db)
@@ -45,7 +49,11 @@ def storage(temp_db):
 
 @pytest.fixture(autouse=True)
 def clean_storage():
-    """Clean the storage before each test."""
+    """Clean the storage before each test.
+
+    Note: Imports are inside fixture to avoid triggering module-level storage
+    initialization in server.py before EVENT_BUS_DB is set by pytest_configure.
+    """
     from event_bus import server
     from event_bus.storage import SQLiteStorage
 
