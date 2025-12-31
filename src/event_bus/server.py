@@ -3,9 +3,10 @@
 Provides tools for cross-session Claude Code communication:
 - register_session: Announce session presence
 - list_sessions: See active sessions
-- publish_event: Broadcast events
-- get_events: Poll for new events
-- heartbeat: Keep session alive
+- publish_event: Broadcast events (auto-refreshes heartbeat)
+- get_events: Poll for new events (auto-refreshes heartbeat)
+- unregister_session: Clean up on exit
+- notify: Send system notifications
 """
 
 import logging

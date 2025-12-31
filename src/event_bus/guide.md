@@ -182,7 +182,7 @@ The notification alerts the **human** who routes the message to the correct sess
 - `get_events` and `publish_event` auto-refresh your heartbeat
 - `get_events()` with no since_id returns newest first; with since_id returns chronological
 - `list_sessions()` returns most recently active sessions first
-- Sessions are auto-cleaned after 7 days of inactivity
+- Sessions are auto-cleaned after 24 hours of inactivity
 - Local sessions with numeric client_ids (PIDs) are cleaned immediately on process death
 - The repo name is auto-detected from your working directory
 - SessionStart hooks can auto-register you on startup

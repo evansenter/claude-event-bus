@@ -88,7 +88,7 @@ Events can be targeted to specific channels:
 For shell scripts and hooks:
 
 ```bash
-event-bus-cli register --name "my-feature" --pid $$
+event-bus-cli register --name "my-feature" --client-id "$$"
 event-bus-cli publish --type "done" --payload "Finished"
 event-bus-cli notify --title "Build" --message "Complete" --sound
 event-bus-cli unregister --session-id $SESSION_ID

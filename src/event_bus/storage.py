@@ -77,10 +77,10 @@ class Event:
 # Default database path
 DEFAULT_DB_PATH = Path.home() / ".claude" / "event-bus.db"
 
-# Session timeout in seconds (7 days without activity = dead)
-# Long timeout supports multi-day sessions; local crashed sessions are
-# cleaned up faster via client liveness check in list_sessions()
-SESSION_TIMEOUT = 604800  # 7 days
+# Session timeout in seconds (24 hours without activity = dead)
+# Local crashed sessions are cleaned up faster via client liveness check
+# in list_sessions()
+SESSION_TIMEOUT = 86400  # 24 hours
 
 
 class SQLiteStorage:
