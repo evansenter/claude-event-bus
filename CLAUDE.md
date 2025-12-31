@@ -55,10 +55,10 @@ src/event_bus/
 
 | Tool | Purpose |
 |------|---------|
-| `register_session(name, machine?, cwd?, pid?)` | Register session, get session_id |
-| `list_sessions()` | List all active sessions |
+| `register_session(name, machine?, cwd?, pid?)` | Register session, get session_id + last_event_id for polling |
+| `list_sessions()` | List active sessions (most recently active first) |
 | `publish_event(type, payload, session_id?, channel?)` | Publish event to channel |
-| `get_events(since_id?, limit?, session_id?)` | Poll for events (filtered by subscriptions) |
+| `get_events(since_id?, limit?, session_id?)` | Get events (since_id=0: newest first; >0: chronological) |
 | `unregister_session(session_id)` | Clean up session on exit |
 | `notify(title, message, sound?)` | Send system notification |
 
