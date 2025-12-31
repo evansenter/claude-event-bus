@@ -412,3 +412,32 @@ class TestDatabaseInitialization:
         events = storage.get_events()
         assert len(events) == 1
         assert events[0].channel == "repo:myrepo"
+
+    def test_composite_index_on_machine_client_id(self, temp_db):
+        """Test that composite index on (machine, client_id) exists for session dedup."""
+        import sqlite3
+
+        # Initialize DB to create schema and indexes
+        SQLiteStorage(db_path=temp_db)
+
+        # Query SQLite for the index
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='sessions'"
+        )
+        index_names = {row[0] for row in cursor.fetchall()}
+        conn.close()
+
+        assert "idx_sessions_dedup" in index_names, (
+            f"Expected idx_sessions_dedup index, found: {index_names}"
+        )
+
+        # Verify the index columns
+        conn = sqlite3.connect(temp_db)
+        cursor = conn.execute("PRAGMA index_info(idx_sessions_dedup)")
+        columns = [row[2] for row in cursor.fetchall()]
+        conn.close()
+
+        assert columns == ["machine", "client_id"], (
+            f"Expected index on (machine, client_id), found: {columns}"
+        )
