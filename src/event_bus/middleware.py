@@ -12,9 +12,9 @@ class RequestLoggingMiddleware:
     def __init__(self, app):
         self.app = app
 
-    async def __call__(self, scope, receive, receive_send):
+    async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
-            await self.app(scope, receive, receive_send)
+            await self.app(scope, receive, send)
             return
 
         # Collect request body
@@ -36,7 +36,7 @@ class RequestLoggingMiddleware:
                 response_status = message.get("status")
             elif message["type"] == "http.response.body":
                 response_parts.append(message.get("body", b""))
-            await receive_send(message)
+            await send(message)
 
         await self.app(scope, receive_wrapper, send_wrapper)
 
