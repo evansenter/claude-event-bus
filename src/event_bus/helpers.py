@@ -36,6 +36,14 @@ def is_pid_alive(pid: int | None) -> bool:
         return True  # Process exists but we can't signal it
 
 
+def _escape_applescript_string(s: str) -> str:
+    """Escape a string for safe inclusion in AppleScript double-quoted strings.
+
+    Prevents command injection by escaping backslashes and double quotes.
+    """
+    return s.replace("\\", "\\\\").replace('"', '\\"')
+
+
 def send_notification(title: str, message: str, sound: bool = False) -> bool:
     """Send a system notification. Returns True if successful.
 
@@ -71,7 +79,10 @@ def send_notification(title: str, message: str, sound: bool = False) -> bool:
                 return True
 
             # Fallback to osascript (no custom icon support)
-            script = f'display notification "{message}" with title "{title}"'
+            # Escape strings to prevent command injection
+            safe_title = _escape_applescript_string(title)
+            safe_message = _escape_applescript_string(message)
+            script = f'display notification "{safe_message}" with title "{safe_title}"'
             if sound:
                 script += ' sound name "default"'
             subprocess.run(
