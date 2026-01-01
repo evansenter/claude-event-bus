@@ -110,7 +110,13 @@ The CLI and MCP tools expose the same functionality with consistent naming:
 - `--json` - JSON output format
 - `--exclude-types` - Event type filtering
 
-**When modifying the API**: Update both CLI (`cli.py`) and MCP (`server.py`) together. Ensure parameter names match (kebab ↔ snake conversion) and document changes in both `guide.md` and this file.
+**When modifying the API**: Update all discovery surfaces together:
+1. **CLI help text** - argparse descriptions in `cli.py` (visible via `event-bus-cli --help`)
+2. **MCP tool docstrings** - in `server.py` (visible to CC via tool inspection)
+3. **Usage guide** - `guide.md` (served as `event-bus://guide` resource)
+4. **CLAUDE.md** - This file, for codebase context
+
+Ensure parameter names match (kebab ↔ snake conversion) across CLI and MCP.
 
 ## Channel-Based Messaging
 

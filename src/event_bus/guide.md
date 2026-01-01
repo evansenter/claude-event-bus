@@ -81,6 +81,13 @@ get_events()
 → {events: [...], next_cursor: "50"}
 ```
 
+### Cursor behavior
+
+- **`cursor=None`** (default): Returns recent events, newest first. Use for quick "what's happening?" checks.
+- **`cursor="<id>"`**: Returns events after that position. Use with `order="asc"` for chronological polling.
+
+The cursor is an opaque string - don't parse it, just pass the value from `next_cursor` or `register_session`.
+
 ### Default order (newest first)
 ```
 get_events()
