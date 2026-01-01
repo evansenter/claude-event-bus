@@ -18,7 +18,7 @@ each session is isolated. This MCP server lets sessions:
 | `list_sessions()` | See all active sessions |
 | `publish_event(type, payload, channel?)` | Send event to a channel |
 | `get_events(cursor?, limit?, session_id?, order?)` | Poll for new events |
-| `unregister_session(session_id)` | Clean up when exiting |
+| `unregister_session(session_id?, client_id?)` | Clean up when exiting |
 | `notify(title, message, sound?)` | Send macOS notification to user |
 
 ## Quick Start
@@ -58,6 +58,8 @@ notify("Build Complete", "All tests passing", sound=True)
 ### 6. Unregister when done
 ```
 unregister_session(session_id="brave-tiger")
+# Or by client_id (simpler for hooks - no need to persist session_id)
+unregister_session(client_id="my-unique-id")
 ```
 
 ## Channels
