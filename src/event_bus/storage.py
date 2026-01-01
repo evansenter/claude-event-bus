@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
+from typing import Literal
 
 logger = logging.getLogger("event-bus")
 
@@ -302,41 +303,30 @@ class SQLiteStorage:
 
     def get_events(
         self,
-        since_id: int = 0,
+        cursor: str | None = None,
         limit: int = 50,
         channels: list[str] | None = None,
-        order: str | None = None,
-    ) -> list[Event]:
-        """Get events, with ordering based on since_id or explicit order parameter.
-
-        Ordering behavior (when order is None):
-        - since_id=0: Returns newest events first (DESC) - for "what's new?" queries
-        - since_id>0: Returns events after that ID in order (ASC) - for polling
-
-        When order is explicitly set to "asc" or "desc", that ordering is used
-        regardless of since_id value.
+        order: Literal["asc", "desc"] = "desc",
+    ) -> tuple[list[Event], str | None]:
+        """Get events with cursor-based pagination.
 
         Args:
-            since_id: Return events with ID greater than this (0 = recent activity)
-            limit: Maximum number of events to return
-            channels: Optional list of channels to filter by (None = all events)
-            order: Explicit ordering ("asc" or "desc"). If None, inferred from since_id.
+            cursor: Opaque position from previous call. None = start from recent.
+            limit: Maximum number of events to return.
+            channels: Optional list of channels to filter by (None = all events).
+            order: "desc" (newest first, default) or "asc" (oldest first).
+
+        Returns:
+            Tuple of (events, next_cursor). Use next_cursor for subsequent calls.
+            next_cursor is the cursor value if there are events, None otherwise.
         """
         with self._connect() as conn:
-            # Determine ordering: explicit order takes precedence, otherwise infer from since_id
-            if order is not None:
-                order_lower = order.lower()
-                if order_lower not in ("asc", "desc"):
-                    logger.warning(f"Invalid order value '{order}', defaulting to 'asc'")
-                    effective_order = "ASC"
-                else:
-                    effective_order = "DESC" if order_lower == "desc" else "ASC"
-            elif since_id == 0:
-                effective_order = "DESC"
-            else:
-                effective_order = "ASC"
+            effective_order = "DESC" if order == "desc" else "ASC"
 
-            # Build WHERE clause based on since_id
+            # Decode cursor to event ID (cursor is opaque string encoding an ID)
+            since_id = int(cursor) if cursor else 0
+
+            # Build WHERE clause based on cursor
             if since_id == 0:
                 where_clause = ""
                 params_base: tuple = ()
@@ -363,7 +353,7 @@ class SQLiteStorage:
             """
             rows = conn.execute(query, params).fetchall()
 
-            return [
+            events = [
                 Event(
                     id=row["id"],
                     event_type=row["event_type"],
@@ -375,8 +365,26 @@ class SQLiteStorage:
                 for row in rows
             ]
 
-    def get_last_event_id(self) -> int:
-        """Get the ID of the most recent event, or 0 if none."""
+            # Compute next_cursor from the events based on order
+            # For DESC: next_cursor is the MIN id (oldest in this batch)
+            # For ASC: next_cursor is the MAX id (newest in this batch)
+            if events:
+                if order == "desc":
+                    next_cursor = str(min(e.id for e in events))
+                else:
+                    next_cursor = str(max(e.id for e in events))
+            else:
+                next_cursor = cursor  # No new events, keep same cursor
+
+            return events, next_cursor
+
+    def get_cursor(self) -> str | None:
+        """Get a cursor pointing to the most recent event.
+
+        Returns:
+            Cursor string for the latest event, or None if no events exist.
+        """
         with self._connect() as conn:
             row = conn.execute("SELECT MAX(id) as max_id FROM events").fetchone()
-            return row["max_id"] or 0
+            max_id = row["max_id"]
+            return str(max_id) if max_id else None

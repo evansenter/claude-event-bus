@@ -55,10 +55,10 @@ src/event_bus/
 
 | Tool | Purpose |
 |------|---------|
-| `register_session(name, machine?, cwd?, client_id?)` | Register session, get session_id + last_event_id for polling |
+| `register_session(name, machine?, cwd?, client_id?)` | Register session, get session_id + cursor for polling |
 | `list_sessions()` | List active sessions (most recently active first) |
 | `publish_event(type, payload, session_id?, channel?)` | Publish event to channel |
-| `get_events(since_id?, limit?, session_id?, order?)` | Get events (since_id=0: newest first; >0: chronological; order overrides) |
+| `get_events(cursor?, limit?, session_id?, order?)` | Get events (order="desc" by default; use "asc" when polling) |
 | `unregister_session(session_id)` | Clean up session on exit |
 | `notify(title, message, sound?)` | Send system notification |
 
@@ -115,7 +115,7 @@ Use consistent event types for discoverability across sessions.
 
 ## Design Decisions
 
-- **Polling over push**: MCP is request/response, so sessions poll with `get_events(since_id)`
+- **Polling over push**: MCP is request/response, so sessions poll with `get_events(cursor)`
 - **Session cleanup**: 24-hour heartbeat timeout + client liveness checks for local sessions
 - **Auto-heartbeat**: `publish_event` and `get_events` auto-refresh heartbeat
 - **SQLite persistence**: State persists across restarts in `~/.claude/event-bus.db`
@@ -141,18 +141,17 @@ event-bus-cli sessions
 # Publish event
 event-bus-cli publish --type "task_done" --payload "Finished" --channel "repo:my-project"
 
-# Get events (basic)
-event-bus-cli events --since 0 --session-id abc123
+# Get events (basic - newest first by default)
+event-bus-cli events --session-id abc123
 
 # Get events with JSON output (for scripting)
 event-bus-cli events --json --limit 10 --exclude-types session_registered,session_unregistered
 
 # Get events with automatic state tracking (ideal for hooks)
-event-bus-cli events --track-state ~/.local/state/claude/last_event_id --json --timeout 200
+event-bus-cli events --track-state ~/.local/state/claude/cursor --json --timeout 200
 
-# Explicit ordering control (overrides since_id behavior)
-event-bus-cli events --order desc --limit 10  # Always newest first
-event-bus-cli events --order asc --since 42   # Always chronological
+# Poll for new events chronologically (use with cursor)
+event-bus-cli events --cursor abc123 --order asc --session-id mysession
 
 # Send notification
 event-bus-cli notify --title "Done" --message "Build complete"
@@ -162,14 +161,14 @@ event-bus-cli notify --title "Done" --message "Build complete"
 
 | Option | Description |
 |--------|-------------|
-| `--since ID` | Get events after this ID (default: 0) |
+| `--cursor ID` | Get events after this cursor (opaque string) |
 | `--session-id ID` | Your session ID for channel filtering |
 | `--limit N` | Maximum events to return |
 | `--exclude-types T1,T2` | Comma-separated event types to filter out |
 | `--timeout MS` | Request timeout in milliseconds (default: 10000) |
-| `--track-state FILE` | Read/write last event ID for incremental polling |
-| `--json` | Output as JSON with `events` array and `last_id` |
-| `--order asc\|desc` | Explicit ordering (overrides since_id behavior) |
+| `--track-state FILE` | Read/write cursor for incremental polling |
+| `--json` | Output as JSON with `events` array and `next_cursor` |
+| `--order asc\|desc` | Event ordering: desc (default, newest first) or asc (oldest first) |
 
 ## Configuration
 
