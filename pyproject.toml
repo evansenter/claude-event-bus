@@ -45,6 +45,9 @@ packages = ["src/event_bus"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+markers = [
+    "real_dm_notifications: tests that need real DM notification behavior (not mocked)",
+]
 
 [tool.ruff]
 target-version = "py310"
