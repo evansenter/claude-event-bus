@@ -67,6 +67,7 @@ make check
 |------|-------------|
 | `register_session` | Register this session with the event bus |
 | `list_sessions` | List all active sessions |
+| `list_channels` | List active channels with subscriber counts |
 | `publish_event` | Publish event to a channel (broadcast, repo, session) |
 | `get_events` | Poll for events (filtered by subscriptions) |
 | `unregister_session` | Clean up session on exit |
