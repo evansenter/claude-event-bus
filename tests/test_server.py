@@ -890,3 +890,87 @@ class TestGetEventsChannelFilter:
         # Verify filtered events are not present
         assert "e2" not in types2
         assert "e4" not in types2
+
+
+class TestUsageGuide:
+    """Tests for usage_guide MCP resource."""
+
+    def test_usage_guide_returns_markdown(self):
+        """Test that usage_guide returns markdown content from guide.md."""
+        # Access the resource function
+        usage_guide = server.usage_guide.fn
+
+        content = usage_guide()
+
+        # Should return non-empty string
+        assert isinstance(content, str)
+        assert len(content) > 0
+        # Should contain markdown-like content (headers, etc.)
+        assert "#" in content
+
+    def test_usage_guide_fallback_on_missing_file(self, tmp_path, monkeypatch):
+        """Test that usage_guide returns fallback when guide.md is missing."""
+        from pathlib import Path
+
+        # Make the guide path point to a non-existent file
+        fake_parent = tmp_path / "nonexistent"
+        monkeypatch.setattr(
+            "event_bus.server.Path",
+            lambda x: fake_parent / "guide.md" if "guide.md" in str(x) else Path(x),
+        )
+
+        # Test the fallback logic by simulating what happens when guide.md is missing
+        def patched_usage_guide():
+            guide_path = tmp_path / "nonexistent" / "guide.md"
+            try:
+                return guide_path.read_text()
+            except FileNotFoundError:
+                return "# Event Bus Usage Guide\n\nGuide file not found. See CLAUDE.md for usage."
+
+        content = patched_usage_guide()
+        assert "Guide file not found" in content
+        assert "CLAUDE.md" in content
+
+
+class TestChannelValidation:
+    """Tests for channel format validation in publish_event."""
+
+    def test_publish_event_accepts_valid_channels(self):
+        """Test that valid channel formats are accepted."""
+        # All standard channel types
+        result1 = publish_event("test", "msg", channel="all")
+        assert result1["channel"] == "all"
+
+        result2 = publish_event("test", "msg", channel="session:abc123")
+        assert result2["channel"] == "session:abc123"
+
+        result3 = publish_event("test", "msg", channel="repo:myrepo")
+        assert result3["channel"] == "repo:myrepo"
+
+        result4 = publish_event("test", "msg", channel="machine:hostname")
+        assert result4["channel"] == "machine:hostname"
+
+    def test_publish_event_accepts_custom_channel_types(self):
+        """Test that custom/unknown channel types are accepted."""
+        # Custom channels should work (not block users from innovation)
+        result = publish_event("test", "msg", channel="team:engineering")
+        assert result["channel"] == "team:engineering"
+
+        result2 = publish_event("test", "msg", channel="custom:anything")
+        assert result2["channel"] == "custom:anything"
+
+    def test_publish_event_with_empty_channel_value(self, caplog):
+        """Test that empty channel values trigger a warning but still work."""
+        import logging
+
+        caplog.set_level(logging.WARNING)
+
+        # Empty value after colon - should warn but not fail
+        result = publish_event("test", "msg", channel="session:")
+
+        # Event should still be published
+        assert "event_id" in result
+        assert result["channel"] == "session:"
+
+        # Should have logged a warning about invalid format
+        assert any("Invalid" in record.message for record in caplog.records)

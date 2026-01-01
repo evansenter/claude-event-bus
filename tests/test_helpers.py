@@ -7,6 +7,7 @@ from event_bus.helpers import (
     escape_applescript_string,
     extract_repo_from_cwd,
     is_client_alive,
+    sanitize_display_name,
 )
 from event_bus.storage import Session
 
@@ -211,3 +212,39 @@ class TestIsClientAlive:
         """Test that empty string client_id is treated as alive."""
         # Empty string can't be parsed as PID, so treated as alive
         assert is_client_alive("", is_local=True) is True
+
+
+class TestSanitizeDisplayName:
+    """Tests for sanitize_display_name helper."""
+
+    def test_replaces_newlines(self):
+        """Test that newlines are replaced with spaces."""
+        assert sanitize_display_name("hello\nworld") == "hello world"
+
+    def test_replaces_tabs(self):
+        """Test that tabs are replaced with spaces."""
+        assert sanitize_display_name("hello\tworld") == "hello world"
+
+    def test_replaces_carriage_returns(self):
+        """Test that carriage returns are replaced with spaces."""
+        assert sanitize_display_name("hello\rworld") == "hello world"
+
+    def test_replaces_multiple_special_chars(self):
+        """Test that multiple special characters are all replaced."""
+        assert sanitize_display_name("a\nb\tc\rd") == "a b c d"
+
+    def test_preserves_normal_text(self):
+        """Test that normal text without special chars passes through."""
+        assert sanitize_display_name("hello world") == "hello world"
+
+    def test_preserves_unicode(self):
+        """Test that Unicode characters are preserved."""
+        assert sanitize_display_name("hello 世界 🎉") == "hello 世界 🎉"
+
+    def test_empty_string(self):
+        """Test that empty string returns empty string."""
+        assert sanitize_display_name("") == ""
+
+    def test_only_special_chars(self):
+        """Test string with only special characters."""
+        assert sanitize_display_name("\n\t\r") == "   "

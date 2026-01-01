@@ -59,7 +59,7 @@ src/event_bus/
 ├── server.py      # MCP tools and server entry point
 ├── storage.py     # SQLite storage backend (Session, Event, SQLiteStorage)
 ├── helpers.py     # Utility functions (notifications, repo extraction)
-├── middleware.py  # Request logging middleware for dev mode
+├── middleware.py  # Request logging middleware (logs to ~/.claude/event-bus.log)
 ├── session_ids.py # Human-readable ID generation (Docker-style names)
 ├── cli.py         # CLI wrapper for shell scripts/hooks
 └── guide.md       # Usage guide served as MCP resource
@@ -109,7 +109,6 @@ The CLI and MCP tools expose the same functionality with consistent naming:
 
 **CLI-only features** (not in MCP):
 - `--timeout` - HTTP request timeout
-- `--track-state` - File-based cursor persistence
 - `--json` - JSON output format
 - `--exclude-types` - Event type filtering
 
@@ -251,9 +250,6 @@ event-bus-cli events --json --limit 10 --exclude-types session_registered,sessio
 # Get events with session_id (cursor auto-tracked in DB - preferred)
 event-bus-cli events --session-id abc123 --cursor "$CURSOR" --order asc
 
-# Legacy: file-based state tracking (use DB tracking instead)
-event-bus-cli events --track-state ~/.local/state/claude/cursor --json --timeout 200
-
 # Poll for new events chronologically (use with cursor)
 event-bus-cli events --cursor abc123 --order asc --session-id mysession
 
@@ -274,9 +270,22 @@ event-bus-cli notify --title "Done" --message "Build complete"
 | `--limit N` | Maximum events to return |
 | `--exclude-types T1,T2` | Comma-separated event types to filter out |
 | `--timeout MS` | Request timeout in milliseconds (default: 10000) |
-| `--track-state FILE` | Read/write cursor for incremental polling |
 | `--json` | Output as JSON with `events` array and `next_cursor` |
 | `--order asc\|desc` | Event ordering: desc (default, newest first) or asc (oldest first) |
+
+## Logging
+
+All MCP tool calls are logged to `~/.claude/event-bus.log` with pretty formatting:
+
+```bash
+# Watch live activity
+tail -f ~/.claude/event-bus.log
+
+# Example output:
+# 22:30:15 │ register_session(name="my-feature", client_id="12345") → session=brave-tiger
+# 22:30:16 │ get_events(session_id="brave-tiger", order="asc") → 3 events, cursor=42
+# 22:30:17 │ publish_event(event_type="task_done", payload="Finished") → event #43 [all]
+```
 
 ## Configuration
 
@@ -284,7 +293,7 @@ event-bus-cli notify --title "Done" --message "Build complete"
 # Override database path (default: ~/.claude/event-bus.db)
 EVENT_BUS_DB=/path/to/db.sqlite event-bus
 
-# Enable request/response logging (for dev mode)
+# Enable console logging in addition to file (for development)
 DEV_MODE=1 event-bus
 
 # Custom notification icon (requires terminal-notifier on macOS)

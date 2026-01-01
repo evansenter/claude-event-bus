@@ -257,7 +257,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -291,7 +290,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -314,7 +312,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -351,7 +348,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=True,
             url=None,
             order="desc",
@@ -380,7 +376,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=True,
             url=None,
             order="desc",
@@ -432,7 +427,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types="session_registered,session_unregistered",
             timeout=10000,
-            track_state=None,
             json=True,
             url=None,
             order="desc",
@@ -460,7 +454,6 @@ class TestCmdEvents:
             limit=5,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -482,7 +475,6 @@ class TestCmdEvents:
             limit=None,
             exclude_types=None,
             timeout=200,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -493,179 +485,6 @@ class TestCmdEvents:
         # Check timeout_ms was passed
         call_kwargs = mock_call.call_args
         assert call_kwargs[1]["timeout_ms"] == 200
-
-    @patch("event_bus.cli.call_tool")
-    def test_events_track_state_read(self, mock_call, tmp_path, capsys):
-        """Test reading cursor from state file."""
-        state_file = tmp_path / "cursor"
-        state_file.write_text("50")
-
-        mock_call.return_value = {
-            "events": [
-                {
-                    "id": 51,
-                    "event_type": "test",
-                    "channel": "all",
-                    "payload": "data",
-                    "session_id": "abc",
-                    "timestamp": "2024-01-01T12:00:00",
-                }
-            ],
-            "next_cursor": "51",
-        }
-
-        args = Namespace(
-            cursor=None,  # This should be ignored when track_state is set
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-        )
-        cli.cmd_events(args)
-
-        # Should have used "50" from file
-        call_args = mock_call.call_args[0][1]
-        assert call_args["cursor"] == "50"
-
-    @patch("event_bus.cli.call_tool")
-    def test_events_track_state_write(self, mock_call, tmp_path, capsys):
-        """Test writing next_cursor to state file."""
-        state_file = tmp_path / "cursor"
-
-        mock_call.return_value = {
-            "events": [
-                {
-                    "id": 100,
-                    "event_type": "test",
-                    "channel": "all",
-                    "payload": "data",
-                    "session_id": "abc",
-                    "timestamp": "2024-01-01T12:00:00",
-                }
-            ],
-            "next_cursor": "100",
-        }
-
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-        )
-        cli.cmd_events(args)
-
-        # State file should have been updated with next_cursor
-        assert state_file.read_text() == "100"
-
-    @patch("event_bus.cli.call_tool")
-    def test_events_track_state_creates_dir(self, mock_call, tmp_path, capsys):
-        """Test that track_state creates parent directories."""
-        state_file = tmp_path / "subdir" / "deep" / "cursor"
-
-        mock_call.return_value = {
-            "events": [
-                {
-                    "id": 42,
-                    "event_type": "test",
-                    "channel": "all",
-                    "payload": "data",
-                    "session_id": "abc",
-                    "timestamp": "2024-01-01T12:00:00",
-                }
-            ],
-            "next_cursor": "42",
-        }
-
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-        )
-        cli.cmd_events(args)
-
-        # Should have created directories and written file
-        assert state_file.exists()
-        assert state_file.read_text() == "42"
-
-    @patch("event_bus.cli.call_tool")
-    def test_events_track_state_missing_file(self, mock_call, tmp_path, capsys):
-        """Test track_state with missing file starts from None."""
-        state_file = tmp_path / "nonexistent"
-
-        mock_call.return_value = {"events": [], "next_cursor": None}
-
-        args = Namespace(
-            cursor="999",  # Should be ignored when track_state is set
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-        )
-        cli.cmd_events(args)
-
-        # Should not have passed cursor (file doesn't exist)
-        call_args = mock_call.call_args[0][1]
-        assert "cursor" not in call_args
-
-    @patch("event_bus.cli.call_tool")
-    def test_events_exclude_types_writes_state_even_when_all_filtered(self, mock_call, tmp_path):
-        """Test that state file is updated even when all events are filtered out."""
-        state_file = tmp_path / "cursor"
-
-        # All events will be filtered out
-        mock_call.return_value = {
-            "events": [
-                {
-                    "id": 10,
-                    "event_type": "session_registered",
-                    "channel": "all",
-                    "payload": "noise",
-                    "session_id": "abc",
-                    "timestamp": "2024-01-01T12:00:00",
-                },
-            ],
-            "next_cursor": "10",
-        }
-
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types="session_registered",
-            timeout=10000,
-            track_state=str(state_file),
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-        )
-        cli.cmd_events(args)
-
-        # State file should be written with next_cursor, even though events list is empty
-        assert state_file.read_text() == "10"
 
 
 class TestCmdNotify:
@@ -903,7 +722,6 @@ class TestCmdEventsWithChannel:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -925,7 +743,6 @@ class TestCmdEventsWithChannel:
             limit=None,
             exclude_types=None,
             timeout=10000,
-            track_state=None,
             json=False,
             url=None,
             order="desc",
@@ -951,3 +768,113 @@ class TestCmdEventsWithChannel:
 
                 args = mock_cmd.call_args[0][0]
                 assert args.channel == "repo:my-repo"
+
+
+class TestEventsExcludeTypes:
+    """Tests for --exclude-types filtering in events command."""
+
+    @patch("event_bus.cli.call_tool")
+    def test_exclude_types_filters_events(self, mock_call):
+        """Test that --exclude-types filters out matching events."""
+        mock_call.return_value = {
+            "events": [
+                {"event_type": "session_registered", "id": 1},
+                {"event_type": "message", "id": 2},
+                {"event_type": "session_unregistered", "id": 3},
+                {"event_type": "task_done", "id": 4},
+            ],
+            "next_cursor": "5",
+        }
+
+        args = MagicMock()
+        args.cursor = None
+        args.limit = None
+        args.session_id = None
+        args.channel = None
+        args.order = "desc"
+        args.timeout = 10000
+        args.json = True
+        args.exclude_types = "session_registered,session_unregistered"
+        args.url = None
+
+        with patch("builtins.print") as mock_print:
+            cli.cmd_events(args)
+
+            # Parse the JSON output
+            output = mock_print.call_args[0][0]
+            import json
+
+            result = json.loads(output)
+
+            # Should only have message and task_done
+            types = [e["event_type"] for e in result["events"]]
+            assert "session_registered" not in types
+            assert "session_unregistered" not in types
+            assert "message" in types
+            assert "task_done" in types
+
+    @patch("event_bus.cli.call_tool")
+    def test_exclude_types_handles_whitespace(self, mock_call):
+        """Test that --exclude-types handles whitespace in type list."""
+        mock_call.return_value = {
+            "events": [
+                {"event_type": "session_registered", "id": 1},
+                {"event_type": "message", "id": 2},
+            ],
+            "next_cursor": "3",
+        }
+
+        args = MagicMock()
+        args.cursor = None
+        args.limit = None
+        args.session_id = None
+        args.channel = None
+        args.order = "desc"
+        args.timeout = 10000
+        args.json = True
+        args.exclude_types = " session_registered , message "  # Extra whitespace
+        args.url = None
+
+        with patch("builtins.print") as mock_print:
+            cli.cmd_events(args)
+
+            output = mock_print.call_args[0][0]
+            import json
+
+            result = json.loads(output)
+
+            # Both should be filtered (whitespace stripped)
+            assert len(result["events"]) == 0
+
+    @patch("event_bus.cli.call_tool")
+    def test_exclude_types_empty_string(self, mock_call):
+        """Test that empty --exclude-types doesn't filter anything."""
+        mock_call.return_value = {
+            "events": [
+                {"event_type": "session_registered", "id": 1},
+                {"event_type": "message", "id": 2},
+            ],
+            "next_cursor": "3",
+        }
+
+        args = MagicMock()
+        args.cursor = None
+        args.limit = None
+        args.session_id = None
+        args.channel = None
+        args.order = "desc"
+        args.timeout = 10000
+        args.json = True
+        args.exclude_types = None  # No filter
+        args.url = None
+
+        with patch("builtins.print") as mock_print:
+            cli.cmd_events(args)
+
+            output = mock_print.call_args[0][0]
+            import json
+
+            result = json.loads(output)
+
+            # Both should be present
+            assert len(result["events"]) == 2

@@ -9,8 +9,12 @@ import subprocess
 logger = logging.getLogger("event-bus")
 
 
-def _sanitize_name(name: str) -> str:
-    """Sanitize a name by replacing problematic characters."""
+def sanitize_display_name(name: str) -> str:
+    """Sanitize a name by replacing problematic characters.
+
+    Used for session names, repo names, and other user-facing strings
+    to prevent display issues from newlines/tabs.
+    """
     return name.replace("\n", " ").replace("\t", " ").replace("\r", " ")
 
 
@@ -25,10 +29,10 @@ def extract_repo_from_cwd(cwd: str) -> str:
     if ".worktrees" in parts:
         idx = parts.index(".worktrees")
         if idx > 0:
-            return _sanitize_name(parts[idx - 1])
+            return sanitize_display_name(parts[idx - 1])
     # Fall back to last directory component
     last = parts[-1] if parts else ""
-    return _sanitize_name(last) if last else "unknown"
+    return sanitize_display_name(last) if last else "unknown"
 
 
 def is_client_alive(client_id: str | None, is_local: bool) -> bool:

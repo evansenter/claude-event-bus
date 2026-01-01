@@ -9,6 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
+from event_bus.helpers import sanitize_display_name
+
 logger = logging.getLogger("event-bus")
 
 # Register datetime adapters/converters (required for Python 3.12+)
@@ -59,7 +61,7 @@ class Session:
             basename = os.path.basename(self.cwd.rstrip("/"))
             if basename:
                 # Sanitize special chars (defense-in-depth, matches extract_repo_from_cwd)
-                return basename.replace("\n", " ").replace("\t", " ").replace("\r", " ")
+                return sanitize_display_name(basename)
 
         return "unknown"
 

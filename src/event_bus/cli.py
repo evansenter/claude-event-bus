@@ -8,8 +8,7 @@ Usage:
     event-bus-cli channels
     event-bus-cli publish --type TYPE --payload PAYLOAD [--channel CHANNEL] [--session-id ID]
     event-bus-cli events [--cursor CURSOR] [--session-id ID] [--limit N] [--exclude-types T1,T2]
-                         [--timeout MS] [--track-state FILE] [--json] [--order asc|desc]
-                         [--channel CHANNEL]
+                         [--timeout MS] [--json] [--order asc|desc] [--channel CHANNEL]
     event-bus-cli notify --title TITLE --message MSG [--sound]
 
 Examples:
@@ -196,19 +195,9 @@ def cmd_publish(args):
 
 def cmd_events(args):
     """Get recent events."""
-    # Handle --track-state: read cursor from file
-    cursor = args.cursor
-    if args.track_state:
-        state_path = os.path.expanduser(args.track_state)
-        try:
-            with open(state_path) as f:
-                cursor = f.read().strip() or None
-        except FileNotFoundError:
-            cursor = None  # Start from beginning if file doesn't exist
-
     arguments = {"order": args.order}
-    if cursor is not None:
-        arguments["cursor"] = cursor
+    if args.cursor is not None:
+        arguments["cursor"] = args.cursor
     if args.limit is not None:
         arguments["limit"] = args.limit
     if args.session_id:
@@ -226,16 +215,6 @@ def cmd_events(args):
     if args.exclude_types:
         exclude_set = {t.strip() for t in args.exclude_types.split(",")}
         events = [e for e in events if e["event_type"] not in exclude_set]
-
-    # Handle --track-state: write next_cursor to file
-    if args.track_state and next_cursor:
-        state_path = os.path.expanduser(args.track_state)
-        # Ensure parent directory exists
-        state_dir = os.path.dirname(state_path)
-        if state_dir:
-            os.makedirs(state_dir, exist_ok=True)
-        with open(state_path, "w") as f:
-            f.write(next_cursor)
 
     # Output format
     if args.json:
@@ -330,10 +309,6 @@ def main():
         type=int,
         default=10000,
         help="Request timeout in milliseconds (default: 10000)",
-    )
-    p_events.add_argument(
-        "--track-state",
-        help="File to read/write cursor for incremental polling",
     )
     p_events.add_argument(
         "--json",

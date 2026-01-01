@@ -464,3 +464,74 @@ class TestDatabaseInitialization:
         assert columns == ["machine", "client_id"], (
             f"Expected index on (machine, client_id), found: {columns}"
         )
+
+
+class TestSessionCursorOperations:
+    """Tests for session cursor tracking operations."""
+
+    def test_update_session_cursor_success(self, storage):
+        """Test updating cursor for existing session."""
+        now = datetime.now()
+        session = Session(
+            id="test-cursor",
+            name="test-session",
+            machine="localhost",
+            cwd="/home/user/project",
+            repo="project",
+            registered_at=now,
+            last_heartbeat=now,
+            last_cursor=None,
+        )
+        storage.add_session(session)
+
+        # Update cursor
+        result = storage.update_session_cursor("test-cursor", "42")
+        assert result is True
+
+        # Verify cursor was updated
+        retrieved = storage.get_session("test-cursor")
+        assert retrieved.last_cursor == "42"
+
+    def test_update_session_cursor_nonexistent(self, storage):
+        """Test updating cursor for nonexistent session returns False."""
+        result = storage.update_session_cursor("nonexistent-session", "42")
+        assert result is False
+
+    def test_update_session_cursor_overwrites(self, storage):
+        """Test that updating cursor overwrites previous value."""
+        now = datetime.now()
+        session = Session(
+            id="test-overwrite",
+            name="test-session",
+            machine="localhost",
+            cwd="/home/user/project",
+            repo="project",
+            registered_at=now,
+            last_heartbeat=now,
+            last_cursor="10",
+        )
+        storage.add_session(session)
+
+        # Update to new cursor
+        storage.update_session_cursor("test-overwrite", "50")
+
+        retrieved = storage.get_session("test-overwrite")
+        assert retrieved.last_cursor == "50"
+
+    def test_session_last_cursor_persisted_on_add(self, storage):
+        """Test that last_cursor is preserved when session is added."""
+        now = datetime.now()
+        session = Session(
+            id="test-persist",
+            name="test-session",
+            machine="localhost",
+            cwd="/home/user/project",
+            repo="project",
+            registered_at=now,
+            last_heartbeat=now,
+            last_cursor="100",
+        )
+        storage.add_session(session)
+
+        retrieved = storage.get_session("test-persist")
+        assert retrieved.last_cursor == "100"
