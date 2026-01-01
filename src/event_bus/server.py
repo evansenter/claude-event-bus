@@ -29,9 +29,10 @@ from event_bus.session_ids import generate_session_id
 from event_bus.storage import Session, SQLiteStorage
 
 # Configure logging
-# Always log to ~/.claude/event-bus.log for tail -f access
+# Log file can be overridden via EVENT_BUS_LOG env var (used by tests)
+# Default: ~/.claude/event-bus.log for tail -f access
 # In dev mode, also log to console
-LOG_FILE = Path.home() / ".claude" / "event-bus.log"
+LOG_FILE = Path(os.environ.get("EVENT_BUS_LOG", Path.home() / ".claude" / "event-bus.log"))
 LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 logger = logging.getLogger("event-bus")

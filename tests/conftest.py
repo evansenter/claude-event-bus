@@ -8,21 +8,29 @@ import pytest
 
 
 def pytest_configure(config):
-    """Set up temp DB before any imports happen.
+    """Set up temp DB and log file before any imports happen.
 
-    This runs before test collection, ensuring EVENT_BUS_DB is set before
-    server.py is imported (which initializes storage at module level).
+    This runs before test collection, ensuring EVENT_BUS_DB and EVENT_BUS_LOG
+    are set before server.py is imported (which initializes storage and logging
+    at module level).
     """
+    # Temp database
     temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
     os.environ["EVENT_BUS_DB"] = temp_db.name
-    # Store path for cleanup
     config._temp_db_path = temp_db.name
+
+    # Temp log file (prevents tests from writing to ~/.claude/event-bus.log)
+    temp_log = tempfile.NamedTemporaryFile(suffix=".log", delete=False)
+    os.environ["EVENT_BUS_LOG"] = temp_log.name
+    config._temp_log_path = temp_log.name
 
 
 def pytest_unconfigure(config):
-    """Clean up temp DB after all tests."""
+    """Clean up temp DB and log file after all tests."""
     if hasattr(config, "_temp_db_path"):
         Path(config._temp_db_path).unlink(missing_ok=True)
+    if hasattr(config, "_temp_log_path"):
+        Path(config._temp_log_path).unlink(missing_ok=True)
 
 
 @pytest.fixture
