@@ -73,13 +73,14 @@ def mock_dm_notifications(request):
     sending real macOS notifications during test runs. We mock at the DM level
     so that TestNotify can still test send_notification behavior.
 
-    Tests in TestAutoNotifyOnDM are excluded because they specifically test
-    DM notification behavior (and mock send_notification directly).
+    Tests marked with @pytest.mark.real_dm_notifications are excluded because
+    they specifically test DM notification behavior (and mock send_notification
+    directly).
     """
     from unittest.mock import patch
 
     # Skip mocking for tests that explicitly test DM notification behavior
-    if request.node.cls and request.node.cls.__name__ == "TestAutoNotifyOnDM":
+    if request.node.get_closest_marker("real_dm_notifications"):
         yield None
         return
 

@@ -3,6 +3,8 @@
 import os
 from unittest.mock import MagicMock, patch
 
+import pytest
+
 from event_bus import server
 
 # Access the underlying functions from FunctionTool wrappers
@@ -124,6 +126,7 @@ class TestNotify:
         assert result["success"] is False
 
 
+@pytest.mark.real_dm_notifications
 class TestAutoNotifyOnDM:
     """Tests for auto-notify on direct messages."""
 
