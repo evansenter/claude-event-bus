@@ -384,8 +384,12 @@ def get_events(
     )
 
     # Persist cursor for session-based tracking (enables seamless resume)
+    # Note: Updates on any poll, not just when cursor is provided. This is intentional -
+    # any poll means the session has "seen" events up to this point, regardless of
+    # whether they started from a specific cursor or checked recent activity.
     if session_id and next_cursor:
-        storage.update_session_cursor(session_id, next_cursor)
+        if not storage.update_session_cursor(session_id, next_cursor):
+            logger.warning(f"Failed to persist cursor for session {session_id}")
 
     events = [
         {
