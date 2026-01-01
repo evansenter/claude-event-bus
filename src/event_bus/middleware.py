@@ -46,6 +46,7 @@ def _format_result(result: dict, colorize: bool = True) -> str:
         result: The MCP result dict to format
         colorize: Whether to add ANSI color codes (default: True)
     """
+
     # Use Colors for ANSI output, or NoColors (empty strings) for plain text
     class NoColors:
         """Empty color codes for non-colorized output."""

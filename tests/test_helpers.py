@@ -280,9 +280,7 @@ class TestSendNotificationFailurePaths:
     @patch("event_bus.helpers.platform.system", return_value="Darwin")
     @patch("event_bus.helpers.shutil.which", return_value="/usr/bin/terminal-notifier")
     @patch("event_bus.helpers.subprocess.run")
-    def test_subprocess_called_process_error_returns_false(
-        self, mock_run, mock_which, mock_system
-    ):
+    def test_subprocess_called_process_error_returns_false(self, mock_run, mock_which, mock_system):
         """Test that CalledProcessError is caught and returns False."""
         error = subprocess.CalledProcessError(
             returncode=1,
@@ -298,9 +296,7 @@ class TestSendNotificationFailurePaths:
     @patch("event_bus.helpers.shutil.which", return_value="/usr/bin/terminal-notifier")
     @patch("event_bus.helpers.subprocess.run")
     @patch("event_bus.helpers.logger")
-    def test_subprocess_error_logs_details(
-        self, mock_logger, mock_run, mock_which, mock_system
-    ):
+    def test_subprocess_error_logs_details(self, mock_logger, mock_run, mock_which, mock_system):
         """Test that CalledProcessError logs stderr and stdout."""
         error = subprocess.CalledProcessError(
             returncode=1,
