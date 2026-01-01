@@ -325,7 +325,12 @@ class SQLiteStorage:
         with self._connect() as conn:
             # Determine ordering: explicit order takes precedence, otherwise infer from since_id
             if order is not None:
-                effective_order = "DESC" if order.lower() == "desc" else "ASC"
+                order_lower = order.lower()
+                if order_lower not in ("asc", "desc"):
+                    logger.warning(f"Invalid order value '{order}', defaulting to 'asc'")
+                    effective_order = "ASC"
+                else:
+                    effective_order = "DESC" if order_lower == "desc" else "ASC"
             elif since_id == 0:
                 effective_order = "DESC"
             else:

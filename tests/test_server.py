@@ -453,6 +453,22 @@ class TestGetEventsOrdering:
         types = [e["event_type"] for e in events]
         assert types.index("first") < types.index("second")
 
+    def test_invalid_order_defaults_to_asc(self):
+        """Test that invalid order value defaults to ASC with warning."""
+        # Clear storage
+        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+
+        # Get starting point
+        start_id = server.storage.get_last_event_id()
+
+        publish_event("first", "1")
+        publish_event("second", "2")
+
+        # Invalid order should default to ASC (chronological)
+        events = get_events(since_id=start_id, order="invalid")
+        types = [e["event_type"] for e in events]
+        assert types.index("first") < types.index("second")
+
 
 class TestUnregisterSession:
     """Tests for unregister_session tool."""
