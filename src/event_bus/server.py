@@ -61,6 +61,43 @@ def _auto_heartbeat(session_id: str | None) -> None:
         storage.update_heartbeat(session_id, datetime.now())
 
 
+def _get_session_channels(session: Session) -> list[str]:
+    """Compute implicit channel subscriptions for a session.
+
+    Sessions are auto-subscribed to channels based on their attributes.
+    """
+    return [
+        "all",  # Broadcasts
+        f"session:{session.id}",  # Direct messages to this session
+        f"repo:{session.repo}",  # Same repo
+        f"machine:{session.machine}",  # Same machine
+    ]
+
+
+def _get_live_sessions() -> list[Session]:
+    """Get live sessions, cleaning up dead ones.
+
+    For local sessions, checks if the client process is still alive.
+    Remote sessions and sessions without client_id are assumed alive.
+
+    Returns:
+        List of sessions that are still alive
+    """
+    storage.cleanup_stale_sessions()
+    local_hostname = socket.gethostname()
+    live = []
+
+    for s in storage.list_sessions():
+        is_local = s.machine == local_hostname
+        if not is_client_alive(s.client_id, is_local):
+            storage.delete_session(s.id)
+            logger.info(f"Cleaned up dead session {s.id} (client_id {s.client_id} not running)")
+            continue
+        live.append(s)
+
+    return live
+
+
 def _notify_dm_recipient(
     channel: str,
     payload: str,
@@ -230,30 +267,9 @@ def list_sessions() -> list[dict]:
     Returns:
         List of active sessions with their info
     """
-    storage.cleanup_stale_sessions()
-
-    local_hostname = socket.gethostname()
     results = []
 
-    for s in storage.list_sessions():
-        # For local sessions, check if client is still alive
-        is_local = s.machine == local_hostname
-        client_alive = is_client_alive(s.client_id, is_local)
-
-        if not client_alive:
-            # Clean up dead session
-            storage.delete_session(s.id)
-            logger.info(f"Cleaned up dead session {s.id} (client_id {s.client_id} not running)")
-            continue
-
-        # Compute implicit channel subscriptions for this session
-        subscribed_channels = [
-            "all",
-            f"session:{s.id}",
-            f"repo:{s.repo}",
-            f"machine:{s.machine}",
-        ]
-
+    for s in _get_live_sessions():
         results.append(
             {
                 "session_id": s.id,
@@ -265,7 +281,7 @@ def list_sessions() -> list[dict]:
                 "registered_at": s.registered_at.isoformat(),
                 "last_heartbeat": s.last_heartbeat.isoformat(),
                 "age_seconds": (datetime.now() - s.registered_at).total_seconds(),
-                "subscribed_channels": subscribed_channels,
+                "subscribed_channels": _get_session_channels(s),
             }
         )
 
@@ -283,28 +299,10 @@ def list_channels() -> list[dict]:
     Returns:
         List of channels with subscriber counts
     """
-    storage.cleanup_stale_sessions()
-
-    local_hostname = socket.gethostname()
     channel_subscribers: dict[str, int] = {}
 
-    for s in storage.list_sessions():
-        # Skip dead sessions
-        is_local = s.machine == local_hostname
-        if not is_client_alive(s.client_id, is_local):
-            storage.delete_session(s.id)
-            logger.info(f"Cleaned up dead session {s.id} (client_id {s.client_id} not running)")
-            continue
-
-        # Compute implicit channels for this session
-        channels = [
-            "all",
-            f"session:{s.id}",
-            f"repo:{s.repo}",
-            f"machine:{s.machine}",
-        ]
-
-        for ch in channels:
+    for s in _get_live_sessions():
+        for ch in _get_session_channels(s):
             channel_subscribers[ch] = channel_subscribers.get(ch, 0) + 1
 
     # Build result - only channels with >0 subscribers (all of them at this point)
@@ -384,13 +382,7 @@ def _get_implicit_channels(session_id: str | None) -> list[str] | None:
     if not session:
         return None  # Session not found, return all events
 
-    # Implicit subscriptions based on session attributes
-    return [
-        "all",  # Broadcasts
-        f"session:{session_id}",  # Direct messages to this session
-        f"repo:{session.repo}",  # Same repo
-        f"machine:{session.machine}",  # Same machine
-    ]
+    return _get_session_channels(session)
 
 
 @mcp.tool()
