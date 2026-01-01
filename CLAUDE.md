@@ -118,6 +118,40 @@ The CLI and MCP tools expose the same functionality with consistent naming:
 
 Ensure parameter names match (kebab ↔ snake conversion) across CLI and MCP.
 
+## MCP API Naming Conventions
+
+Standard conventions for MCP tool and argument naming across related projects (session-analytics, event-bus).
+
+### Tool Names
+
+| Prefix | When to use | Example |
+|--------|-------------|---------|
+| `list_*` | Enumerate items (no complex filtering) | `list_sessions()` |
+| `get_*` | Retrieve data with parameters/filters | `get_events(cursor=...)` |
+| `search_*` | Full-text/fuzzy search | `search_messages(query=...)` |
+| `analyze_*` | Compute derived insights | `analyze_trends(...)` |
+| `ingest_*` | Load/import data | `ingest_logs(...)` |
+| `verb_noun` | Perform actions | `register_session`, `publish_event` |
+
+### Argument Names
+
+| Concept | Standard Name | Notes |
+|---------|---------------|-------|
+| Session identifier | `session_id` | Not `session` or `sid` |
+| Max results | `limit` | Not `count` or `max` |
+| Pagination position | `cursor` | Opaque string, not `offset` or `since_id` |
+| Sort direction | `order` | Values: `"asc"`, `"desc"` |
+| Time window | `days` | Use fractional for hours: `days=0.5` = 12h |
+| Project filter | `project` | Not `project_path` |
+| Minimum threshold | `min_count` | Not `threshold` or `min_events` |
+
+### CLI ↔ MCP Mapping
+
+- CLI uses kebab-case: `--session-id`
+- MCP uses snake_case: `session_id`
+- CLI commands are short nouns/verbs: `sessions`, `publish`
+- MCP tools are descriptive: `list_sessions`, `publish_event`
+
 ## Channel-Based Messaging
 
 Events can be targeted to specific channels:
