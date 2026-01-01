@@ -35,6 +35,22 @@ pytest tests/test_server.py::TestRegisterSession -v
 
 **Note**: `make install` and `make uninstall` are idempotent - safe to run multiple times.
 
+### When to Restart
+
+Code changes require a server restart to take effect:
+
+```bash
+make restart   # Restarts the LaunchAgent
+```
+
+| Change | Restart Needed? |
+|--------|-----------------|
+| `server.py`, `storage.py`, `helpers.py`, `cli.py` | **Yes** |
+| `guide.md` | No (read fresh each request) |
+| `CLAUDE.md`, tests, docs | No |
+
+In dev mode (`./scripts/dev.sh`), the server auto-reloads on file changes.
+
 ## Architecture
 
 ```
