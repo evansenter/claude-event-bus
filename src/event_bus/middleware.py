@@ -3,7 +3,42 @@
 import json
 import logging
 
+from event_bus.storage import SQLiteStorage
+
 logger = logging.getLogger("event-bus")
+
+# Lazy-loaded storage for session lookups
+_storage: SQLiteStorage | None = None
+
+
+def _get_storage() -> SQLiteStorage:
+    """Get or create storage instance for session lookups."""
+    global _storage
+    if _storage is None:
+        _storage = SQLiteStorage()
+    return _storage
+
+
+def _lookup_session_name(session_id: str) -> str | None:
+    """Look up human-readable session name from a client_id or session_id.
+
+    Returns the human-readable name if found, None otherwise.
+    """
+    try:
+        storage = _get_storage()
+        # First check if it's already a registered session_id
+        session = storage.get_session(session_id)
+        if session:
+            return session.id  # Already human-readable
+
+        # Try to find by client_id (search all sessions)
+        for s in storage.list_sessions():
+            if s.client_id == session_id:
+                return s.id
+        return None
+    except Exception:
+        return None
+
 
 # ANSI color codes for tail -f viewing
 _BOLD = "\033[1m"
@@ -244,7 +279,26 @@ class RequestLoggingMiddleware:
             req_params = req_json.get("params", {})
             tool_name = req_params.get("name", "?")
             tool_args = req_params.get("arguments", {})
-            args_str = _format_args(tool_args)
+
+            # Extract caller from session_id arg (if present)
+            caller_prefix = ""
+            raw_session_id = tool_args.get("session_id")
+            if raw_session_id and isinstance(raw_session_id, str):
+                # Try to resolve to human-readable name
+                resolved_name = _lookup_session_name(raw_session_id)
+                if resolved_name:
+                    caller_prefix = f"{_CYAN}[{resolved_name}]{_RESET} "
+                elif _is_human_readable_id(raw_session_id):
+                    # Already human-readable but not found (shouldn't happen)
+                    caller_prefix = f"{_CYAN}[{raw_session_id}]{_RESET} "
+                else:
+                    # UUID we couldn't resolve - show truncated
+                    short_id = raw_session_id[:8] if len(raw_session_id) > 8 else raw_session_id
+                    caller_prefix = f"{_DIM}[{short_id}…]{_RESET} "
+
+            # Format args without session_id (it's shown as caller prefix)
+            args_without_session = {k: v for k, v in tool_args.items() if k != "session_id"}
+            args_str = _format_args(args_without_session)
 
             # Parse SSE response
             response_text = response_body.decode("utf-8", errors="replace")
@@ -252,7 +306,7 @@ class RequestLoggingMiddleware:
             result = resp_json.get("result", resp_json.get("error", {}))
             result_str = _format_result(result)
 
-            # Log one-liner: tool(args) → result (with colors for tail -f)
+            # Log one-liner: [caller] tool(args) → result (with colors for tail -f)
             # Use tool-specific colors: yellow for publish/notify, blue for get_events
             tool_color = _TOOL_COLORS.get(tool_name, _GREEN)
             tool_colored = f"{tool_color}{_BOLD}{tool_name}{_RESET}"
@@ -260,9 +314,9 @@ class RequestLoggingMiddleware:
             arrow = f"{_DIM}→{_RESET}"
 
             if args_str:
-                logger.info(f"{tool_colored}({args_colored}) {arrow} {result_str}")
+                logger.info(f"{caller_prefix}{tool_colored}({args_colored}) {arrow} {result_str}")
             else:
-                logger.info(f"{tool_colored}() {arrow} {result_str}")
+                logger.info(f"{caller_prefix}{tool_colored}() {arrow} {result_str}")
 
         except (json.JSONDecodeError, UnicodeDecodeError):
             pass  # Skip malformed requests
