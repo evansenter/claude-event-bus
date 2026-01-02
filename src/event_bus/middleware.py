@@ -25,22 +25,12 @@ def _lookup_session_display_id(session_id: str) -> str | None:
     Session IDs are now UUIDs (or client_ids). This resolves them to
     human-readable display names like "brave-tiger".
 
-    Also searches by client_id for backwards compatibility with sessions
-    registered before the UUID migration.
-
     Returns the display_id if found, None otherwise.
     """
     try:
         storage = _get_storage()
-        # Look up session by ID (UUID or client_id)
         session = storage.get_session(session_id)
-        if session:
-            return session.display_id
-        # Fallback: search by client_id (for pre-migration sessions)
-        for s in storage.list_sessions():
-            if s.client_id == session_id:
-                return s.display_id
-        return None
+        return session.display_id if session else None
     except Exception:
         return None
 
@@ -50,19 +40,10 @@ def _get_active_sessions_map() -> dict[str, str]:
 
     Returns a dict where keys are session IDs (UUIDs) and values are
     human-readable display_ids (like "brave-tiger").
-
-    Also includes client_id as a key for backwards compatibility with
-    sessions registered before the UUID migration.
     """
     try:
         storage = _get_storage()
-        result = {}
-        for s in storage.list_sessions():
-            result[s.id] = s.display_id
-            # Also map client_id for pre-migration sessions
-            if s.client_id:
-                result[s.client_id] = s.display_id
-        return result
+        return {s.id: s.display_id for s in storage.list_sessions()}
     except Exception:
         return {}
 
