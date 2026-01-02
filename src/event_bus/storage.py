@@ -4,11 +4,12 @@ import logging
 import os
 import shutil
 import sqlite3
+from collections.abc import Callable
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 logger = logging.getLogger("event-bus")
 
