@@ -5,15 +5,170 @@ import logging
 
 logger = logging.getLogger("event-bus")
 
+# ANSI color codes for tail -f viewing
+_BOLD = "\033[1m"
+_GREEN = "\033[32m"
+_YELLOW = "\033[33m"
+_BLUE = "\033[34m"
+_CYAN = "\033[36m"
+_MAGENTA = "\033[35m"
+_RED = "\033[31m"
+_DIM = "\033[2m"
+_RESET = "\033[0m"
+
+# Tool color categories
+_TOOL_COLORS = {
+    # Actions with side effects (yellow)
+    "publish_event": _YELLOW,
+    "notify": _YELLOW,
+    # Read operations (blue)
+    "get_events": _BLUE,
+    # Default (green) for everything else
+}
+
+
+def _format_args(args: dict) -> str:
+    """Format tool arguments concisely with key field highlighting."""
+    if not args:
+        return ""
+    parts = []
+    # Fields to highlight with colors
+    highlight_fields = {"session_id", "name", "channel", "client_id"}
+    for k, v in args.items():
+        val = json.dumps(v)
+        if k in highlight_fields:
+            # Highlight key fields: cyan key, bold value
+            parts.append(f"{_CYAN}{k}{_RESET}={_BOLD}{val}{_RESET}")
+        else:
+            # Normal dim formatting
+            parts.append(f"{k}={val}")
+    return ", ".join(parts)
+
+
+def _format_list(items: list) -> str:
+    """Format a list result, showing actual names."""
+    n = len(items)
+    if n == 0:
+        return f"{_DIM}empty{_RESET}"
+    # Infer type from first item's keys and show names
+    first = items[0] if isinstance(items[0], dict) else None
+    if first:
+        if "session_id" in first:
+            # Show session names: tender-hawk, brave-tiger, ...
+            names = [item.get("session_id", "?") for item in items]
+            return f"{_CYAN}{', '.join(names)}{_RESET}"
+        if "channel" in first and "subscribers" in first:
+            # Show channel names: all, repo:foo, machine:bar, ...
+            names = [item.get("channel", "?") for item in items]
+            return f"{_CYAN}{', '.join(names)}{_RESET}"
+    return f"{_CYAN}{n} items{_RESET}"
+
+
+def _format_result(result) -> str:
+    """Format result for logging with ANSI colors for tail -f viewing."""
+    if not isinstance(result, dict):
+        if isinstance(result, list):
+            return _format_list(result)
+        s = str(result)
+        return s[:60] + "..." if len(s) > 60 else s
+
+    # FastMCP wraps results: {content: [...], structuredContent: {...}, isError: ...}
+    # Extract the actual content from structuredContent
+    if "structuredContent" in result:
+        result = result.get("structuredContent", {})
+        # Some tools return {result: {...}} inside structuredContent
+        if isinstance(result, dict) and "result" in result and len(result) == 1:
+            result = result["result"]
+        # Handle list results (e.g., list_sessions returns a list)
+        if isinstance(result, list):
+            return _format_list(result)
+
+    if not isinstance(result, dict):
+        s = str(result)
+        return s[:60] + "..." if len(s) > 60 else s
+
+    # Handle common result patterns with colors
+    if "session_id" in result:
+        return f"{_CYAN}session={result['session_id']}{_RESET}"
+    if "events" in result:
+        events = result.get("events", [])
+        count = len(events)
+        cursor = result.get("next_cursor", "?")
+        color = _GREEN if count > 0 else _DIM
+
+        extra_info = []
+
+        # Show unique publishers (session names)
+        if count > 0:
+            publishers = set()
+            for e in events:
+                sid = e.get("session_id", "")
+                if sid and sid != "anonymous":
+                    publishers.add(sid)
+            if publishers:
+                names = ", ".join(sorted(publishers)[:5])  # Limit to 5
+                if len(publishers) > 5:
+                    names += f" +{len(publishers) - 5}"
+                extra_info.append(f"{_CYAN}from: {names}{_RESET}")
+
+        # Show timespan if we have events with timestamps
+        if count > 0 and events[0].get("timestamp"):
+            try:
+                first_ts = events[-1].get("timestamp", "")[:16]  # Oldest
+                last_ts = events[0].get("timestamp", "")[:16]  # Newest
+                if first_ts and last_ts and first_ts != last_ts:
+                    extra_info.append(f"{_DIM}{first_ts} to {last_ts}{_RESET}")
+                elif first_ts:
+                    extra_info.append(f"{_DIM}{first_ts}{_RESET}")
+            except (KeyError, IndexError):
+                pass
+
+        suffix = f" ({', '.join(extra_info)})" if extra_info else ""
+        return f"{color}{count} events{_RESET}, cursor={cursor}{suffix}"
+    if "event_id" in result:
+        return f"{_MAGENTA}event #{result['event_id']}{_RESET} [{result.get('channel', 'all')}]"
+    if "sessions" in result:
+        return f"{_CYAN}{len(result['sessions'])} sessions{_RESET}"
+    if "channels" in result:
+        return f"{_CYAN}{len(result['channels'])} channels{_RESET}"
+    if "success" in result:
+        return f"{_GREEN}OK{_RESET}" if result["success"] else f"{_RED}FAILED{_RESET}"
+    if "error" in result:
+        return f"{_RED}ERROR:{_RESET} {result['error']}"
+
+    # Fallback: show keys
+    keys = ", ".join(result.keys()) if result else "{}"
+    return f"{_DIM}{keys}{_RESET}"
+
+
+def _parse_sse_response(response_text: str) -> dict:
+    """Parse SSE format response to extract JSON result."""
+    # SSE format: "event: message\ndata: {...}\n\n"
+    for line in response_text.split("\n"):
+        if line.startswith("data: "):
+            try:
+                return json.loads(line[6:])
+            except json.JSONDecodeError:
+                pass
+    return {}
+
 
 class RequestLoggingMiddleware:
-    """ASGI middleware that logs request and response bodies."""
+    """ASGI middleware that logs MCP tool calls with pretty formatting."""
 
     def __init__(self, app):
         self.app = app
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        path = scope.get("path", "")
+        method = scope.get("method", "")
+
+        # Only log MCP POST requests
+        if path != "/mcp" or method != "POST":
             await self.app(scope, receive, send)
             return
 
@@ -28,50 +183,48 @@ class RequestLoggingMiddleware:
 
         # Collect response body
         response_parts = []
-        response_status = None
 
         async def send_wrapper(message):
-            nonlocal response_status
-            if message["type"] == "http.response.start":
-                response_status = message.get("status")
-            elif message["type"] == "http.response.body":
+            if message["type"] == "http.response.body":
                 response_parts.append(message.get("body", b""))
             await send(message)
 
         await self.app(scope, receive_wrapper, send_wrapper)
 
         # Log after request completes
-        path = scope.get("path", "")
-        method = scope.get("method", "")
+        request_body = b"".join(body_parts)
+        response_body = b"".join(response_parts)
 
-        if path == "/mcp" and method == "POST":
-            request_body = b"".join(body_parts)
-            response_body = b"".join(response_parts)
+        try:
+            req_json = json.loads(request_body) if request_body else {}
+            req_method = req_json.get("method", "?")
 
-            try:
-                req_json = json.loads(request_body) if request_body else {}
-                req_method = req_json.get("method", "?")
-                req_params = req_json.get("params", {})
+            # Only log tool calls
+            if req_method != "tools/call":
+                return
 
-                # Format nicely for MCP tool calls
-                if req_method == "tools/call":
-                    tool_name = req_params.get("name", "?")
-                    tool_args = req_params.get("arguments", {})
-                    logger.info(f"→ {tool_name}({json.dumps(tool_args)})")
-                else:
-                    logger.debug(f"→ {req_method}: {json.dumps(req_params)}")
+            req_params = req_json.get("params", {})
+            tool_name = req_params.get("name", "?")
+            tool_args = req_params.get("arguments", {})
+            args_str = _format_args(tool_args)
 
-                # Log response
-                resp_json = json.loads(response_body) if response_body else {}
-                result = resp_json.get("result", resp_json.get("error", {}))
+            # Parse SSE response
+            response_text = response_body.decode("utf-8", errors="replace")
+            resp_json = _parse_sse_response(response_text)
+            result = resp_json.get("result", resp_json.get("error", {}))
+            result_str = _format_result(result)
 
-                # Truncate large responses
-                result_str = json.dumps(result)
-                if len(result_str) > 500:
-                    result_str = result_str[:500] + "..."
+            # Log one-liner: tool(args) → result (with colors for tail -f)
+            # Use tool-specific colors: yellow for publish/notify, blue for get_events
+            tool_color = _TOOL_COLORS.get(tool_name, _GREEN)
+            tool_colored = f"{tool_color}{_BOLD}{tool_name}{_RESET}"
+            args_colored = f"{_DIM}{args_str}{_RESET}" if args_str else ""
+            arrow = f"{_DIM}→{_RESET}"
 
-                logger.info(f"← [{response_status}] {result_str}")
+            if args_str:
+                logger.info(f"{tool_colored}({args_colored}) {arrow} {result_str}")
+            else:
+                logger.info(f"{tool_colored}() {arrow} {result_str}")
 
-            except json.JSONDecodeError:
-                logger.debug(f"→ {method} {path} (non-JSON body)")
-                logger.debug(f"← [{response_status}]")
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            pass  # Skip malformed requests
