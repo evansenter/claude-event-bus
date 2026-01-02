@@ -10,6 +10,7 @@ from event_bus.middleware import (
     _format_args,
     _format_list,
     _format_result,
+    _format_session_id_value,
     _is_human_readable_id,
     _parse_sse_response,
 )
@@ -33,12 +34,29 @@ class TestFormatArgs:
         assert 'type="test"' in result
 
     def test_highlighted_fields(self):
-        """session_id, name, channel, client_id are highlighted."""
-        result = _format_args({"session_id": "test-session"})
+        """name, channel, client_id are highlighted with bold values."""
+        result = _format_args({"name": "my-feature"})
+        assert _CYAN in result
+        assert _BOLD in result
+        assert "name" in result
+        assert "my-feature" in result
+
+    def test_session_id_human_readable(self):
+        """Human-readable session_id is shown bold."""
+        result = _format_args({"session_id": "brave-tiger"})
         assert _CYAN in result
         assert _BOLD in result
         assert "session_id" in result
-        assert "test-session" in result
+        assert "brave-tiger" in result
+
+    def test_session_id_uuid_truncated(self):
+        """UUID session_id is dimmed and truncated."""
+        result = _format_args({"session_id": "b712a0ba-1ee6-4c18-a647-31a785147665"})
+        assert _CYAN in result
+        assert _DIM in result
+        assert "session_id" in result
+        assert "b712a0ba" in result  # First 8 chars
+        assert "1ee6" not in result  # Rest is truncated
 
     def test_multiple_args(self):
         """Multiple args are comma-separated."""
@@ -277,3 +295,28 @@ class TestIsHumanReadableId:
         """Uppercase words are not human-readable."""
         assert _is_human_readable_id("Brave-Tiger") is False
         assert _is_human_readable_id("BRAVE-TIGER") is False
+
+
+class TestFormatSessionIdValue:
+    """Tests for _format_session_id_value function."""
+
+    def test_human_readable_bold(self):
+        """Human-readable IDs are shown bold."""
+        result = _format_session_id_value("brave-tiger")
+        assert _BOLD in result
+        assert "brave-tiger" in result
+
+    def test_uuid_dimmed_truncated(self):
+        """Long UUIDs are dimmed and truncated to 8 chars."""
+        result = _format_session_id_value("b712a0ba-1ee6-4c18-a647-31a785147665")
+        assert _DIM in result
+        assert "b712a0ba" in result
+        assert "…" in result  # Ellipsis indicates truncation
+        assert "1ee6" not in result
+
+    def test_short_id_dimmed_not_truncated(self):
+        """Short non-human-readable IDs are dimmed but not truncated."""
+        result = _format_session_id_value("abc123")
+        assert _DIM in result
+        assert "abc123" in result
+        assert "…" not in result

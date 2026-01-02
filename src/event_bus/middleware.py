@@ -42,20 +42,40 @@ def _is_human_readable_id(session_id: str) -> bool:
     return all(part.isalpha() and part.islower() for part in parts)
 
 
+def _format_session_id_value(session_id: str) -> str:
+    """Format a session_id value for display.
+
+    Human-readable IDs (brave-tiger) are shown prominently.
+    UUIDs/hex strings are dimmed and truncated.
+    """
+    if _is_human_readable_id(session_id):
+        return f"{_BOLD}{session_id}{_RESET}"
+    elif len(session_id) > 12:
+        # Truncate long UUIDs to first 8 chars
+        return f"{_DIM}{session_id[:8]}…{_RESET}"
+    else:
+        return f"{_DIM}{session_id}{_RESET}"
+
+
 def _format_args(args: dict) -> str:
     """Format tool arguments concisely with key field highlighting."""
     if not args:
         return ""
     parts = []
     # Fields to highlight with colors
-    highlight_fields = {"session_id", "name", "channel", "client_id"}
+    highlight_fields = {"name", "channel", "client_id"}
     for k, v in args.items():
-        val = json.dumps(v)
-        if k in highlight_fields:
+        if k == "session_id" and isinstance(v, str):
+            # Special handling for session_id - show human-readable names prominently
+            formatted_val = _format_session_id_value(v)
+            parts.append(f"{_CYAN}{k}{_RESET}={formatted_val}")
+        elif k in highlight_fields:
             # Highlight key fields: cyan key, bold value
+            val = json.dumps(v)
             parts.append(f"{_CYAN}{k}{_RESET}={_BOLD}{val}{_RESET}")
         else:
-            # Normal dim formatting
+            # Normal formatting
+            val = json.dumps(v)
             parts.append(f"{k}={val}")
     return ", ".join(parts)
 
