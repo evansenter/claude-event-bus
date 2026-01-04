@@ -5,6 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from conftest import make_events_args
 from event_bus import cli
 
 
@@ -87,13 +88,14 @@ class TestCmdRegister:
         mock_getcwd.return_value = "/home/user/project"
         mock_call.return_value = {"session_id": "abc123", "name": "my-session"}
 
-        args = Namespace(name="my-session", client_id=None, url=None)
+        args = Namespace(name="my-session", client_id=None, url=None, debug=False)
         cli.cmd_register(args)
 
         mock_call.assert_called_once_with(
             "register_session",
             {"name": "my-session", "cwd": "/home/user/project"},
             url=None,
+            debug=False,
         )
 
     @patch("event_bus.cli.call_tool")
@@ -103,13 +105,14 @@ class TestCmdRegister:
         mock_getcwd.return_value = "/home/user/my-project"
         mock_call.return_value = {"session_id": "abc123", "name": "my-project"}
 
-        args = Namespace(name=None, client_id=None, url=None)
+        args = Namespace(name=None, client_id=None, url=None, debug=False)
         cli.cmd_register(args)
 
         mock_call.assert_called_once_with(
             "register_session",
             {"name": "my-project", "cwd": "/home/user/my-project"},
             url=None,
+            debug=False,
         )
 
     @patch("event_bus.cli.call_tool")
@@ -119,7 +122,7 @@ class TestCmdRegister:
         mock_getcwd.return_value = "/home/user/project"
         mock_call.return_value = {"session_id": "abc123"}
 
-        args = Namespace(name="test", client_id="abc-session", url=None)
+        args = Namespace(name="test", client_id="abc-session", url=None, debug=False)
         cli.cmd_register(args)
 
         call_args = mock_call.call_args[0][1]
@@ -134,13 +137,14 @@ class TestCmdUnregister:
         """Test unregister session by session_id."""
         mock_call.return_value = {"success": True, "session_id": "abc123"}
 
-        args = Namespace(session_id="abc123", client_id=None, url=None)
+        args = Namespace(session_id="abc123", client_id=None, url=None, debug=False)
         cli.cmd_unregister(args)
 
         mock_call.assert_called_once_with(
             "unregister_session",
             {"session_id": "abc123"},
             url=None,
+            debug=False,
         )
 
     @patch("event_bus.cli.call_tool")
@@ -148,18 +152,19 @@ class TestCmdUnregister:
         """Test unregister session by client_id."""
         mock_call.return_value = {"success": True, "session_id": "abc123"}
 
-        args = Namespace(session_id=None, client_id="my-client-123", url=None)
+        args = Namespace(session_id=None, client_id="my-client-123", url=None, debug=False)
         cli.cmd_unregister(args)
 
         mock_call.assert_called_once_with(
             "unregister_session",
             {"client_id": "my-client-123"},
             url=None,
+            debug=False,
         )
 
     def test_unregister_requires_identifier(self):
         """Test unregister fails without session_id or client_id."""
-        args = Namespace(session_id=None, client_id=None, url=None)
+        args = Namespace(session_id=None, client_id=None, url=None, debug=False)
 
         with pytest.raises(SystemExit) as exc_info:
             cli.cmd_unregister(args)
@@ -175,7 +180,7 @@ class TestCmdSessions:
         """Test listing no sessions."""
         mock_call.return_value = []
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_sessions(args)
 
         captured = capsys.readouterr()
@@ -195,7 +200,7 @@ class TestCmdSessions:
             }
         ]
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_sessions(args)
 
         captured = capsys.readouterr()
@@ -214,7 +219,7 @@ class TestCmdPublish:
         mock_call.return_value = {"event_id": 1}
 
         args = Namespace(
-            type="test_event", payload="hello", channel=None, session_id=None, url=None
+            type="test_event", payload="hello", channel=None, session_id=None, url=None, debug=False
         )
         cli.cmd_publish(args)
 
@@ -222,6 +227,7 @@ class TestCmdPublish:
             "publish_event",
             {"event_type": "test_event", "payload": "hello"},
             url=None,
+            debug=False,
         )
 
     @patch("event_bus.cli.call_tool")
@@ -235,6 +241,7 @@ class TestCmdPublish:
             channel="repo:my-repo",
             session_id="abc123",
             url=None,
+            debug=False,
         )
         cli.cmd_publish(args)
 
@@ -251,19 +258,7 @@ class TestCmdEvents:
         """Test getting no events."""
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args()
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -286,19 +281,7 @@ class TestCmdEvents:
             "next_cursor": "1",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args()
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -310,19 +293,7 @@ class TestCmdEvents:
         """Test events with session filtering."""
         mock_call.return_value = {"events": [], "next_cursor": "5"}
 
-        args = Namespace(
-            cursor="5",
-            session_id="abc123",
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(cursor="5", session_id="abc123")
         cli.cmd_events(args)
 
         call_args = mock_call.call_args[0][1]
@@ -348,19 +319,7 @@ class TestCmdEvents:
             "next_cursor": "42",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(json=True)
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -378,19 +337,7 @@ class TestCmdEvents:
 
         mock_call.return_value = {"events": [], "next_cursor": "10"}
 
-        args = Namespace(
-            cursor="10",
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(cursor="10", json=True)
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -431,19 +378,7 @@ class TestCmdEvents:
             "next_cursor": "1",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types="session_registered,session_unregistered",
-            timeout=10000,
-            track_state=None,
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(exclude_types="session_registered,session_unregistered", json=True)
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -460,19 +395,7 @@ class TestCmdEvents:
         """Test limit parameter is passed through."""
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=5,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(limit=5)
         cli.cmd_events(args)
 
         call_args = mock_call.call_args[0][1]
@@ -483,19 +406,7 @@ class TestCmdEvents:
         """Test timeout parameter is passed to call_tool."""
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=200,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(timeout=200)
         cli.cmd_events(args)
 
         # Check timeout_ms was passed
@@ -522,19 +433,7 @@ class TestCmdEvents:
             "next_cursor": "51",
         }
 
-        args = Namespace(
-            cursor=None,  # This should be ignored when track_state is set
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(track_state=str(state_file), json=True)
         cli.cmd_events(args)
 
         # Should have used "50" from file
@@ -560,19 +459,7 @@ class TestCmdEvents:
             "next_cursor": "100",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(track_state=str(state_file))
         cli.cmd_events(args)
 
         # State file should have been updated with next_cursor
@@ -597,19 +484,7 @@ class TestCmdEvents:
             "next_cursor": "42",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(track_state=str(state_file))
         cli.cmd_events(args)
 
         # Should have created directories and written file
@@ -623,19 +498,7 @@ class TestCmdEvents:
 
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor="999",  # Should be ignored when track_state is set
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=str(state_file),
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args(cursor="999", track_state=str(state_file))
         cli.cmd_events(args)
 
         # Should not have passed cursor (file doesn't exist)
@@ -662,18 +525,8 @@ class TestCmdEvents:
             "next_cursor": "10",
         }
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types="session_registered",
-            timeout=10000,
-            track_state=str(state_file),
-            json=True,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
+        args = make_events_args(
+            exclude_types="session_registered", track_state=str(state_file), json=True
         )
         cli.cmd_events(args)
 
@@ -689,7 +542,7 @@ class TestCmdNotify:
         """Test successful notification."""
         mock_call.return_value = {"success": True}
 
-        args = Namespace(title="Test", message="Hello", sound=False, url=None)
+        args = Namespace(title="Test", message="Hello", sound=False, url=None, debug=False)
         cli.cmd_notify(args)
 
         captured = capsys.readouterr()
@@ -700,7 +553,7 @@ class TestCmdNotify:
         """Test failed notification."""
         mock_call.return_value = {"success": False}
 
-        args = Namespace(title="Test", message="Hello", sound=False, url=None)
+        args = Namespace(title="Test", message="Hello", sound=False, url=None, debug=False)
 
         with pytest.raises(SystemExit) as exc_info:
             cli.cmd_notify(args)
@@ -712,7 +565,7 @@ class TestCmdNotify:
         """Test notification with sound."""
         mock_call.return_value = {"success": True}
 
-        args = Namespace(title="Test", message="Hello", sound=True, url=None)
+        args = Namespace(title="Test", message="Hello", sound=True, url=None, debug=False)
         cli.cmd_notify(args)
 
         call_args = mock_call.call_args[0][1]
@@ -812,7 +665,7 @@ class TestCmdChannels:
         """Test listing no channels."""
         mock_call.return_value = []
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_channels(args)
 
         captured = capsys.readouterr()
@@ -827,7 +680,7 @@ class TestCmdChannels:
             {"channel": "session:abc123", "subscribers": 1},
         ]
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_channels(args)
 
         captured = capsys.readouterr()
@@ -843,10 +696,10 @@ class TestCmdChannels:
         """Test that channels command calls list_channels tool."""
         mock_call.return_value = []
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_channels(args)
 
-        mock_call.assert_called_once_with("list_channels", {}, url=None)
+        mock_call.assert_called_once_with("list_channels", {}, url=None, debug=False)
 
 
 class TestCmdSessionsWithChannels:
@@ -872,7 +725,7 @@ class TestCmdSessionsWithChannels:
             }
         ]
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_sessions(args)
 
         captured = capsys.readouterr()
@@ -893,7 +746,7 @@ class TestCmdSessionsWithChannels:
             }
         ]
 
-        args = Namespace(url=None)
+        args = Namespace(url=None, debug=False)
         cli.cmd_sessions(args)
 
         captured = capsys.readouterr()
@@ -910,19 +763,7 @@ class TestCmdEventsWithChannel:
         """Test events with channel filter."""
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel="repo:my-repo",
-            resume=False,
-        )
+        args = make_events_args(channel="repo:my-repo")
         cli.cmd_events(args)
 
         call_args = mock_call.call_args[0][1]
@@ -933,19 +774,7 @@ class TestCmdEventsWithChannel:
         """Test events without channel filter (default behavior)."""
         mock_call.return_value = {"events": [], "next_cursor": None}
 
-        args = Namespace(
-            cursor=None,
-            session_id=None,
-            limit=None,
-            exclude_types=None,
-            timeout=10000,
-            track_state=None,
-            json=False,
-            url=None,
-            order="desc",
-            channel=None,
-            resume=False,
-        )
+        args = make_events_args()
         cli.cmd_events(args)
 
         call_args = mock_call.call_args[0][1]
