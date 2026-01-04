@@ -378,16 +378,12 @@ def publish_event(
 def _get_implicit_channels(session_id: str | None) -> list[str] | None:
     """Get the channels a session is implicitly subscribed to.
 
-    Returns None if no session (returns all events), or a list of channels.
+    Returns None to disable filtering - all sessions see all events (broadcast model).
+    Channel metadata is preserved on events for informational purposes.
     """
-    if not session_id:
-        return None  # No filtering, return all events
-
-    session = storage.get_session(session_id)
-    if not session:
-        return None  # Session not found, return all events
-
-    return _get_session_channels(session)
+    # Broadcast model: everyone sees everything
+    # Explicit channel filtering via get_events(channel=X) still works if needed
+    return None
 
 
 @mcp.tool()
