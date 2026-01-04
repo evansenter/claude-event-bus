@@ -399,9 +399,9 @@ def get_events(
     Args:
         cursor: Position from previous call or register_session. None = recent activity.
         limit: Maximum number of events to return (default: 50).
-        session_id: Your session ID (for auto-heartbeat and channel filtering).
+        session_id: Your session ID (for auto-heartbeat and cursor tracking).
         order: "desc" (newest first, default) or "asc" (oldest first).
-        channel: Filter to a specific channel (overrides session-based filtering).
+        channel: Optionally filter to a specific channel.
 
     Returns:
         Dict with "events" list and "next_cursor" for pagination.
@@ -412,13 +412,8 @@ def get_events(
     3. Use next_cursor from response for subsequent calls
     4. Use get_events() (no cursor) to see recent activity
 
-    Events are filtered to channels the session is subscribed to:
-    - "all": Broadcasts (everyone receives)
-    - "session:{your_id}": Direct messages to you
-    - "repo:{your_repo}": Events for your repo
-    - "machine:{your_machine}": Events for your machine
-
-    Use the channel parameter to filter to a specific channel instead.
+    All sessions see all events (broadcast model). Use the channel parameter
+    to explicitly filter if you only want events from a specific channel.
     """
     # Auto-refresh heartbeat when session polls
     _auto_heartbeat(session_id)
@@ -426,8 +421,8 @@ def get_events(
     storage.cleanup_stale_sessions()
 
     # Determine channel filtering:
-    # - If explicit channel provided, use only that
-    # - Otherwise, use session's implicit subscriptions
+    # - If explicit channel provided, filter to that channel
+    # - Otherwise, return all events (broadcast model)
     if channel:
         channels = [channel]
     else:
