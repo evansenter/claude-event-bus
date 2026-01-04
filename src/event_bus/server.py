@@ -393,6 +393,7 @@ def get_events(
     session_id: str | None = None,
     order: Literal["asc", "desc"] = "desc",
     channel: str | None = None,
+    resume: bool = False,
 ) -> dict:
     """Get events from the event bus.
 
@@ -402,6 +403,7 @@ def get_events(
         session_id: Your session ID (for auto-heartbeat and cursor tracking).
         order: "desc" (newest first, default) or "asc" (oldest first).
         channel: Optionally filter to a specific channel.
+        resume: If True, use session's saved cursor position (requires session_id, ignored if cursor provided).
 
     Returns:
         Dict with "events" list and "next_cursor" for pagination.
@@ -411,12 +413,20 @@ def get_events(
     2. Poll with get_events(cursor=cursor) to get events
     3. Use next_cursor from response for subsequent calls
     4. Use get_events() (no cursor) to see recent activity
+    5. Use get_events(session_id=X, resume=True) for incremental polling
 
     All sessions see all events (broadcast model). Use the channel parameter
     to explicitly filter if you only want events from a specific channel.
     """
     # Auto-refresh heartbeat when session polls
     _auto_heartbeat(session_id)
+
+    # Resume from saved cursor if requested
+    # Only applies when: resume=True, session_id provided, cursor not provided
+    if resume and session_id and cursor is None:
+        session = storage.get_session(session_id)
+        if session and session.last_cursor:
+            cursor = session.last_cursor
 
     storage.cleanup_stale_sessions()
 
@@ -432,14 +442,16 @@ def get_events(
         cursor=cursor, limit=limit, channels=channels, order=order
     )
 
-    # Persist cursor for session-based tracking (enables seamless resume)
-    # Note: Updates on any poll, not just when cursor is provided. This is intentional -
-    # any poll means the session has "seen" events up to this point, regardless of
-    # whether they started from a specific cursor or checked recent activity.
+    # Persist high-water mark for session-based tracking (enables seamless resume)
+    # We save the MAX event ID seen, not the pagination cursor. This ensures that
+    # resume=True always starts from after the newest event seen, regardless of
+    # what order was used for polling.
+    # Note: Updates on any poll - any poll means the session has "seen" events up to this point.
     # Silently ignore unknown session_ids - callers may pass external session IDs
     # (like Claude Code's own UUIDs) that aren't registered with us.
-    if session_id and next_cursor:
-        storage.update_session_cursor(session_id, next_cursor)
+    if session_id and raw_events:
+        high_water_mark = str(max(e.id for e in raw_events))
+        storage.update_session_cursor(session_id, high_water_mark)
 
     events = [
         {

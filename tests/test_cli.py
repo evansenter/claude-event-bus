@@ -262,6 +262,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -296,6 +297,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -319,6 +321,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -356,6 +359,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -385,6 +389,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -437,6 +442,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -465,6 +471,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -487,6 +494,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -525,6 +533,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -562,6 +571,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -598,6 +608,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -623,6 +634,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -661,6 +673,7 @@ class TestCmdEvents:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -908,6 +921,7 @@ class TestCmdEventsWithChannel:
             url=None,
             order="desc",
             channel="repo:my-repo",
+            resume=False,
         )
         cli.cmd_events(args)
 
@@ -930,6 +944,7 @@ class TestCmdEventsWithChannel:
             url=None,
             order="desc",
             channel=None,
+            resume=False,
         )
         cli.cmd_events(args)
 

@@ -598,7 +598,7 @@ class TestSessionCursorTracking:
     """Tests for session-based cursor tracking (RFC #37)."""
 
     def test_get_events_persists_cursor(self):
-        """Test that get_events persists cursor when session_id provided."""
+        """Test that get_events persists high-water mark when session_id provided."""
         # Register a session
         reg = register_session(name="test", machine="remote-host", client_id="test-123")
         session_id = reg["session_id"]
@@ -607,13 +607,15 @@ class TestSessionCursorTracking:
         publish_event("event1", "payload1")
         publish_event("event2", "payload2")
 
-        # Get events with session_id - should persist cursor
+        # Get events with session_id - should persist high-water mark
         result = get_events(session_id=session_id)
 
-        # Check cursor was persisted
+        # Check high-water mark was persisted (max event ID, not pagination cursor)
         session = server.storage.get_session(session_id)
         assert session.last_cursor is not None
-        assert session.last_cursor == result["next_cursor"]
+        # High-water mark is the MAX event ID seen
+        max_event_id = str(max(e["id"] for e in result["events"]))
+        assert session.last_cursor == max_event_id
 
     def test_resumed_session_gets_last_cursor(self):
         """Test that resumed sessions get their last_cursor for seamless resume."""
@@ -692,6 +694,73 @@ class TestSessionCursorTracking:
         # No session should have cursor updated (we can't verify this directly,
         # but we can verify the call doesn't raise)
         # This test mainly ensures the None check works correctly
+
+    def test_resume_uses_saved_cursor(self):
+        """Test that resume=True uses the session's saved cursor."""
+        # Register session
+        reg = register_session(name="test", machine="test-host", client_id="resume-test")
+        session_id = reg["session_id"]
+
+        # Publish events and poll to establish cursor position
+        publish_event("event1", "payload1")
+        publish_event("event2", "payload2")
+        get_events(session_id=session_id)  # Establishes saved cursor
+
+        # Publish more events
+        publish_event("event3", "payload3")
+        publish_event("event4", "payload4")
+
+        # Poll with resume=True (no cursor) should start from saved cursor
+        result2 = get_events(session_id=session_id, resume=True, order="asc")
+
+        # Should only get events after saved cursor (event3, event4)
+        event_types = [e["event_type"] for e in result2["events"]]
+        assert "event1" not in event_types
+        assert "event2" not in event_types
+        assert "event3" in event_types
+        assert "event4" in event_types
+
+    def test_resume_ignored_when_cursor_provided(self):
+        """Test that explicit cursor takes precedence over resume=True."""
+        # Register session
+        reg = register_session(name="test", machine="test-host", client_id="resume-cursor-test")
+        session_id = reg["session_id"]
+        initial_cursor = reg["cursor"]
+
+        # Publish events and poll to establish a different cursor
+        publish_event("event1", "payload1")
+        publish_event("event2", "payload2")
+        get_events(session_id=session_id)  # Advances saved cursor
+
+        # Publish more events
+        publish_event("event3", "payload3")
+
+        # Poll with both resume=True AND explicit cursor
+        # Explicit cursor should take precedence
+        result = get_events(
+            session_id=session_id,
+            cursor=initial_cursor,  # Explicit cursor from registration
+            resume=True,  # Should be ignored
+            order="asc",
+        )
+
+        # Should get all events after initial cursor (event1, event2, event3)
+        event_types = [e["event_type"] for e in result["events"]]
+        assert "event1" in event_types
+        assert "event2" in event_types
+        assert "event3" in event_types
+
+    def test_resume_without_session_id_does_nothing(self):
+        """Test that resume=True without session_id returns recent events."""
+        # Publish some events
+        publish_event("event1", "payload1")
+        publish_event("event2", "payload2")
+
+        # Poll with resume=True but no session_id
+        result = get_events(resume=True)
+
+        # Should work like normal get_events() - returns recent events
+        assert len(result["events"]) >= 2
 
 
 class TestUnregisterByClientId:

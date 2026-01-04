@@ -9,7 +9,7 @@ Usage:
     event-bus-cli publish --type TYPE --payload PAYLOAD [--channel CHANNEL] [--session-id ID]
     event-bus-cli events [--cursor CURSOR] [--session-id ID] [--limit N] [--exclude-types T1,T2]
                          [--timeout MS] [--track-state FILE] [--json] [--order asc|desc]
-                         [--channel CHANNEL]
+                         [--channel CHANNEL] [--resume]
     event-bus-cli notify --title TITLE --message MSG [--sound]
 
 Examples:
@@ -40,6 +40,9 @@ Examples:
 
     # Get events from a specific channel
     event-bus-cli events --channel "repo:my-project"
+
+    # Resume from saved cursor (incremental polling - no duplicates)
+    event-bus-cli events --session-id abc123 --resume --order asc
 
     # Send notification
     event-bus-cli notify --title "Build Complete" --message "All tests passed"
@@ -232,6 +235,8 @@ def cmd_events(args):
         arguments["session_id"] = args.session_id
     if args.channel:
         arguments["channel"] = args.channel
+    if args.resume:
+        arguments["resume"] = True
 
     result = call_tool("get_events", arguments, url=args.url, timeout_ms=args.timeout)
 
@@ -366,6 +371,11 @@ def main():
     p_events.add_argument(
         "--channel",
         help="Filter to a specific channel (e.g., 'repo:my-project', 'all')",
+    )
+    p_events.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume from saved cursor position (requires --session-id, ignored if --cursor provided)",
     )
     p_events.set_defaults(func=cmd_events)
 
