@@ -226,6 +226,58 @@ class TestFormatResult:
         assert "session=" in result
         assert "test-session" in result
 
+    def test_content_only_json_extraction(self):
+        """FastMCP content-only responses extract JSON from content array."""
+        # When structuredContent is missing, extract from content array
+        wrapped = {
+            "content": [{"type": "text", "text": '{"events": [], "next_cursor": "0"}'}],
+            "isError": False,
+        }
+        result = _format_result(wrapped)
+        # Should recognize the events format and format it properly
+        assert "0 events" in result
+        assert "cursor=0" in result
+
+    def test_content_only_json_extraction_session(self):
+        """Content-only extraction works for session results."""
+        wrapped = {
+            "content": [{"type": "text", "text": '{"session_id": "brave-tiger"}'}],
+            "isError": False,
+        }
+        result = _format_result(wrapped)
+        assert "session=" in result
+        assert "brave-tiger" in result
+
+    def test_content_only_invalid_json_fallback(self):
+        """Invalid JSON in content array falls through gracefully."""
+        wrapped = {
+            "content": [{"type": "text", "text": "not valid json {"}],
+            "isError": False,
+        }
+        result = _format_result(wrapped)
+        # Falls through to fallback - shows keys of original dict
+        assert "content" in result or "isError" in result
+
+    def test_content_only_empty_array(self):
+        """Empty content array falls through gracefully."""
+        wrapped = {
+            "content": [],
+            "isError": False,
+        }
+        result = _format_result(wrapped)
+        # Falls through to fallback
+        assert "content" in result or "isError" in result
+
+    def test_content_only_missing_text_field(self):
+        """Content item without text field falls through gracefully."""
+        wrapped = {
+            "content": [{"type": "image", "data": "..."}],
+            "isError": False,
+        }
+        result = _format_result(wrapped)
+        # Falls through to fallback
+        assert "content" in result or "isError" in result
+
     def test_list_result(self):
         """List result delegates to _format_list."""
         result = _format_result([{"session_id": "a"}, {"session_id": "b"}])
