@@ -18,7 +18,7 @@ each session is isolated. This MCP server lets sessions:
 | `list_sessions()` | See all active sessions with their subscribed channels |
 | `list_channels()` | See active channels and subscriber counts |
 | `publish_event(type, payload, channel?)` | Send event to a channel |
-| `get_events(cursor?, limit?, session_id?, order?, channel?)` | Poll for new events |
+| `get_events(cursor?, limit?, session_id?, order?, channel?, resume?)` | Poll for new events |
 | `unregister_session(session_id?, client_id?)` | Clean up when exiting |
 | `notify(title, message, sound?)` | Send macOS notification to user |
 
@@ -146,19 +146,29 @@ get_events(channel="repo:my-project")
 ```
 Without `channel`, you see all events (broadcast model). Use this parameter when you only want events about a specific repo, session, or machine.
 
+### Resume parameter
+Use `resume=True` to automatically start from your last saved cursor position:
+```
+get_events(session_id=session_id, resume=True, order="asc")
+→ {events: [...], next_cursor: "55"}
+```
+This is the simplest way to do incremental polling - no need to track the cursor yourself:
+- Requires `session_id` to look up your saved position
+- Ignored if you also provide an explicit `cursor` (explicit cursor takes precedence)
+- Combined with `order="asc"` for chronological catch-up
+
 ### Recommended Pattern
 ```python
-# 1. On session start (or resume), register with client_id
+# 1. On session start, register with client_id
 result = register_session(name="my-feature", client_id="my-unique-id")
 session_id = result["session_id"]
-cursor = result["cursor"]  # Resume point (auto-tracked on resume)
 
-# 2. Poll periodically for new events (oldest first to process in order)
-result = get_events(cursor=cursor, session_id=session_id, order="asc")
+# 2. Poll for new events using resume=True (simplest approach)
+result = get_events(session_id=session_id, resume=True, order="asc")
 for event in result["events"]:
     # Process each event
     pass
-cursor = result["next_cursor"]  # For next poll (also auto-saved!)
+# Cursor is auto-saved after each poll!
 
 # 3. On session resume, your last position is preserved
 # Just call register_session with same client_id - cursor picks up where you left off
@@ -238,6 +248,7 @@ The notification alerts the **human** who routes the message to the correct sess
 - Pass `client_id` to enable session resumption across restarts
 - **Session IDs**: `session_id` is for API calls (UUID or your client_id), `display_id` is human-readable (e.g., "brave-tiger")
 - **Cursor auto-tracking**: When you pass `session_id` to `get_events()`, your cursor is auto-saved. On resume, you pick up where you left off!
+- **Simplest polling**: Use `get_events(session_id=X, resume=True, order="asc")` for incremental polling without manual cursor management
 - `get_events` and `publish_event` auto-refresh your heartbeat
 - `get_events()` defaults to newest first (`order="desc"`); use `order="asc"` when polling with cursor
 - `list_sessions()` returns most recently active sessions first

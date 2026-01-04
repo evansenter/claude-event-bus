@@ -103,7 +103,7 @@ src/event_bus/
 | `list_sessions()` | List active sessions with their subscribed channels |
 | `list_channels()` | List active channels with subscriber counts |
 | `publish_event(event_type, payload, session_id?, channel?)` | Publish event to channel |
-| `get_events(cursor?, limit?, session_id?, order?, channel?)` | Get events (with optional channel filter) |
+| `get_events(cursor?, limit?, session_id?, order?, channel?, resume?)` | Get events (with optional channel filter, resume from saved cursor) |
 | `unregister_session(session_id?, client_id?)` | Clean up session on exit (provide either identifier) |
 | `notify(title, message, sound?)` | Send system notification |
 
@@ -284,6 +284,9 @@ event-bus-cli events --cursor abc123 --order asc --session-id mysession
 # Filter events to a specific channel
 event-bus-cli events --channel "repo:my-project"
 
+# Resume from saved cursor (simplest incremental polling)
+event-bus-cli events --session-id abc123 --resume --order asc
+
 # Send notification
 event-bus-cli notify --title "Done" --message "Build complete"
 ```
@@ -295,6 +298,7 @@ event-bus-cli notify --title "Done" --message "Build complete"
 | `--cursor ID` | Get events after this cursor (opaque string) |
 | `--session-id ID` | Your session ID (for cursor tracking and heartbeat) |
 | `--channel CHANNEL` | Optionally filter to a specific channel (e.g., `repo:my-project`) |
+| `--resume` | Resume from saved cursor position (requires `--session-id`, ignored if `--cursor` provided) |
 | `--limit N` | Maximum events to return |
 | `--exclude-types T1,T2` | Comma-separated event types to filter out |
 | `--timeout MS` | Request timeout in milliseconds (default: 10000) |
