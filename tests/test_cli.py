@@ -400,7 +400,7 @@ class TestCmdEvents:
             "next_cursor": "1",
         }
 
-        args = make_events_args(exclude_types="session_registered,session_unregistered", json=True)
+        args = make_events_args(exclude="session_registered,session_unregistered", json=True)
         cli.cmd_events(args)
 
         captured = capsys.readouterr()
@@ -411,6 +411,30 @@ class TestCmdEvents:
         assert output["events"][0]["event_type"] == "message"
         # next_cursor comes from the API, filtering happens client-side
         assert output["next_cursor"] == "1"
+
+    @patch("event_bus.cli.call_tool")
+    def test_events_include_types(self, mock_call, capsys):
+        """Test --include flag passes event_types to server."""
+        mock_call.return_value = {
+            "events": [
+                {
+                    "id": 1,
+                    "event_type": "task_completed",
+                    "channel": "all",
+                    "payload": "done",
+                    "session_id": "abc",
+                    "timestamp": "2024-01-01T12:00:00",
+                },
+            ],
+            "next_cursor": "1",
+        }
+
+        args = make_events_args(include="task_completed,ci_completed", json=True)
+        cli.cmd_events(args)
+
+        # Verify event_types was passed to server
+        call_args = mock_call.call_args[0][1]
+        assert call_args["event_types"] == ["task_completed", "ci_completed"]
 
     @patch("event_bus.cli.call_tool")
     def test_events_limit(self, mock_call):
@@ -548,7 +572,7 @@ class TestCmdEvents:
         }
 
         args = make_events_args(
-            exclude_types="session_registered", track_state=str(state_file), json=True
+            exclude="session_registered", track_state=str(state_file), json=True
         )
         cli.cmd_events(args)
 
