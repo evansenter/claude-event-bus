@@ -1,12 +1,18 @@
 """ASGI middleware for the event bus server."""
 
+from __future__ import annotations
+
 import json
 import logging
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from event_bus.storage import SQLiteStorage
 
 logger = logging.getLogger("event-bus")
 
 
-def _get_storage():
+def _get_storage() -> SQLiteStorage:
     """Get the shared storage instance from server.
 
     Uses late import to avoid circular dependency (server imports middleware).
