@@ -721,11 +721,10 @@ class TestDbLocationMigration:
         monkeypatch.setattr(storage_module, "DEFAULT_DB_PATH", new_path)
 
         # Initialize storage - should create fresh DB
-        storage = SQLiteStorage(db_path=str(new_path))
+        SQLiteStorage(db_path=str(new_path))
 
         assert new_path.exists(), "New DB should be created"
         assert not old_path.exists(), "Old DB should still not exist"
-        storage  # noqa: B018
 
     def test_no_migration_when_new_db_already_exists(self, tmp_path, monkeypatch):
         """Test that migration is skipped if new DB already exists."""
@@ -776,7 +775,7 @@ class TestDbLocationMigration:
         monkeypatch.setattr(storage_module, "DEFAULT_DB_PATH", new_path)
 
         # Initialize storage - should NOT overwrite existing new DB
-        storage = SQLiteStorage(db_path=str(new_path))
+        SQLiteStorage(db_path=str(new_path))
 
         # Old DB should still exist (not moved because new already exists)
         assert old_path.exists(), "Old DB should still exist when migration skipped"
@@ -789,5 +788,3 @@ class TestDbLocationMigration:
         row = cursor.fetchone()
         conn.close()
         assert row is None, "New DB should not have old_marker table (wasn't overwritten)"
-
-        storage  # noqa: B018
