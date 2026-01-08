@@ -707,7 +707,6 @@ class TestDbLocationMigration:
 
         # Verify storage is functional after migration
         assert storage.session_count() == 0, "Storage should work after migration"
-        storage  # noqa: B018 - ensure storage is used
 
     def test_no_migration_when_old_db_missing(self, tmp_path, monkeypatch):
         """Test that no migration occurs if old DB doesn't exist."""
