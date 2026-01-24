@@ -196,3 +196,102 @@ This pattern works for any MCP server (e.g., session-analytics):
 3. **Client side:** Update MCP config to use `https://HOSTNAME.TAILNET.ts.net/path`
 
 The key insight: `tailscale serve` acts as a reverse proxy that handles TLS and injects identity headers, so your server code stays simple.
+
+### Implementation Guide
+
+#### 1. Add the middleware class
+
+```python
+# middleware.py (or wherever your middleware lives)
+import logging
+
+logger = logging.getLogger(__name__)
+
+class TailscaleAuthMiddleware:
+    """ASGI middleware that requires Tailscale identity headers."""
+
+    TAILSCALE_USER_HEADER = b"tailscale-user-login"
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        headers = dict(scope.get("headers", []))
+        tailscale_user = headers.get(self.TAILSCALE_USER_HEADER)
+
+        if not tailscale_user:
+            logger.warning(
+                f"Rejected unauthenticated request to {scope.get('path', '/')} "
+                f"from {scope.get('client', ('unknown',))[0]}"
+            )
+            await self._send_unauthorized(send)
+            return
+
+        await self.app(scope, receive, send)
+
+    async def _send_unauthorized(self, send):
+        body = b'{"error": "Unauthorized", "message": "Tailscale identity required"}'
+        await send({
+            "type": "http.response.start",
+            "status": 401,
+            "headers": [
+                (b"content-type", b"application/json"),
+                (b"content-length", str(len(body)).encode()),
+            ],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": body,
+            "more_body": False,
+        })
+```
+
+#### 2. Integrate in create_app()
+
+```python
+# server.py
+import os
+from .middleware import TailscaleAuthMiddleware, RequestLoggingMiddleware
+
+def create_app():
+    app = mcp.http_app(stateless_http=True)
+
+    # Logging middleware (innermost)
+    app = RequestLoggingMiddleware(app)
+
+    # Auth middleware (outermost) - unless disabled
+    if not os.environ.get("EVENT_BUS_AUTH_DISABLED", "").lower() in ("1", "true"):
+        app = TailscaleAuthMiddleware(app)
+
+    return app
+```
+
+#### 3. Disable auth in tests
+
+```python
+# tests/conftest.py
+def pytest_configure(config):
+    # ... other setup ...
+    os.environ["EVENT_BUS_AUTH_DISABLED"] = "1"
+```
+
+#### 4. Set up tailscale serve on the server
+
+```bash
+# If your server runs on port 8081
+tailscale serve --bg 8081
+```
+
+#### 5. Update client configs
+
+```bash
+# MCP config
+claude mcp add --transport http --scope user session-analytics https://YOUR-SERVER.TAILNET.ts.net/mcp
+
+# Environment variable
+export SESSION_ANALYTICS_URL="https://YOUR-SERVER.TAILNET.ts.net/mcp"
+```
