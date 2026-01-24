@@ -640,3 +640,29 @@ class TestTailscaleAuthMiddleware:
 
         assert mock_app.called
         assert responses[0]["status"] == 200
+
+    @pytest.mark.asyncio
+    async def test_rejects_non_localhost_without_tailscale(self, mock_app):
+        """Non-localhost IPs without Tailscale headers are rejected."""
+        middleware = TailscaleAuthMiddleware(mock_app)
+
+        scope = {
+            "type": "http",
+            "path": "/mcp",
+            "method": "POST",
+            "headers": [],  # No Tailscale header
+            "client": ("192.168.1.100", 12345),  # Non-localhost IP
+        }
+
+        async def receive():
+            return {"type": "http.request", "body": b"", "more_body": False}
+
+        responses = []
+
+        async def send(message):
+            responses.append(message)
+
+        await middleware(scope, receive, send)
+
+        assert not mock_app.called
+        assert responses[0]["status"] == 401
