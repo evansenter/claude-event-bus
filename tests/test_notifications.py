@@ -100,11 +100,12 @@ class TestNotify:
         call_args = mock_run.call_args[0][0]
         assert "sound name" in call_args[2]
 
+    @patch.dict(os.environ, {"DISPLAY": ":0"})
     @patch("event_bus.helpers.platform.system")
     @patch("event_bus.helpers.shutil.which")
     @patch("event_bus.helpers.subprocess.run")
     def test_notify_linux(self, mock_run, mock_which, mock_system):
-        """Test notification on Linux."""
+        """Test notification on Linux with display."""
         mock_system.return_value = "Linux"
         mock_which.return_value = "/usr/bin/notify-send"
         mock_run.return_value = MagicMock()
@@ -115,6 +116,16 @@ class TestNotify:
         mock_run.assert_called_once()
         call_args = mock_run.call_args[0][0]
         assert call_args == ["notify-send", "Test", "Hello"]
+
+    @patch.dict(os.environ, {"DISPLAY": "", "DBUS_SESSION_BUS_ADDRESS": ""}, clear=False)
+    @patch("event_bus.helpers.platform.system")
+    def test_notify_linux_headless(self, mock_system):
+        """Test notification skipped on headless Linux."""
+        mock_system.return_value = "Linux"
+
+        result = notify(title="Test", message="Hello")
+
+        assert result["success"] is False
 
     @patch("event_bus.helpers.platform.system")
     def test_notify_unsupported_platform(self, mock_system):

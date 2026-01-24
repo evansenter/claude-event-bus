@@ -121,6 +121,10 @@ def send_notification(title: str, message: str, sound: bool = False) -> bool:
             return True
 
         elif system == "Linux":
+            # Skip on headless servers (no display or D-Bus session)
+            if not os.environ.get("DISPLAY") and not os.environ.get("DBUS_SESSION_BUS_ADDRESS"):
+                return False  # Headless server, can't send notifications
+
             # Check for notify-send
             if shutil.which("notify-send"):
                 cmd = ["notify-send", title, message]
