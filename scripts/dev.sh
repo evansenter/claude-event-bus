@@ -11,7 +11,7 @@ SERVICE_WAS_RUNNING=false
 
 # Stop service if running (to free port 8080)
 if [[ "$(uname)" == "Darwin" ]]; then
-    LABEL="com.evansenter.claude-event-bus"
+    LABEL="com.evansenter.agent-event-bus"
     PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
     if launchctl list 2>/dev/null | grep -q "$LABEL"; then
         echo "Stopping LaunchAgent for dev mode..."
@@ -20,7 +20,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
         osascript -e 'display notification "Stopped for dev mode" with title "Event Bus"' 2>/dev/null
     fi
 else
-    SERVICE_NAME="claude-event-bus"
+    SERVICE_NAME="agent-event-bus"
     if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
         echo "Stopping systemd service for dev mode..."
         systemctl --user stop "$SERVICE_NAME"

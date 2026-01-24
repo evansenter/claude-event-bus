@@ -294,7 +294,7 @@ def cmd_notify(args):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="CLI wrapper for claude-event-bus",
+        description="CLI wrapper for agent-event-bus",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )

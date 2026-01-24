@@ -6,9 +6,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 VENV_PYTHON="$PROJECT_DIR/.venv/bin/python"
-PLIST_TEMPLATE="$SCRIPT_DIR/com.evansenter.claude-event-bus.plist"
-PLIST_DEST="$HOME/Library/LaunchAgents/com.evansenter.claude-event-bus.plist"
-LABEL="com.evansenter.claude-event-bus"
+PLIST_TEMPLATE="$SCRIPT_DIR/com.evansenter.agent-event-bus.plist"
+PLIST_DEST="$HOME/Library/LaunchAgents/com.evansenter.agent-event-bus.plist"
+LABEL="com.evansenter.agent-event-bus"
 
 # Check venv exists
 if [[ ! -f "$VENV_PYTHON" ]]; then

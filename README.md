@@ -18,7 +18,7 @@ When running multiple Claude Code sessions (in separate terminals or worktrees),
          └────────────────────┼────────────────────┘
                               ▼
               ┌───────────────────────────────────┐
-              │   claude-event-bus (localhost)    │
+              │   agent-event-bus (localhost)    │
               └───────────────────────────────────┘
 ```
 
@@ -29,8 +29,8 @@ When running multiple Claude Code sessions (in separate terminals or worktrees),
 Run the event bus server on this machine:
 
 ```bash
-git clone https://github.com/evansenter/claude-event-bus.git
-cd claude-event-bus
+git clone https://github.com/evansenter/agent-event-bus.git
+cd agent-event-bus
 make install
 ```
 
@@ -41,8 +41,8 @@ Installs: venv, LaunchAgent (auto-start), CLI (`~/.local/bin/event-bus-cli`), MC
 Connect to an event bus running on another machine (e.g., via Tailscale):
 
 ```bash
-git clone https://github.com/evansenter/claude-event-bus.git
-cd claude-event-bus
+git clone https://github.com/evansenter/agent-event-bus.git
+cd agent-event-bus
 make install-cli
 ```
 
@@ -112,7 +112,7 @@ Run one server, connect from multiple machines via Tailscale (or any VPN).
 make install  # Full install with LaunchAgent
 ```
 
-Edit `~/Library/LaunchAgents/com.evansenter.claude-event-bus.plist`, add to `EnvironmentVariables`:
+Edit `~/Library/LaunchAgents/com.evansenter.agent-event-bus.plist`, add to `EnvironmentVariables`:
 ```xml
 <key>HOST</key>
 <string>0.0.0.0</string>
@@ -120,7 +120,7 @@ Edit `~/Library/LaunchAgents/com.evansenter.claude-event-bus.plist`, add to `Env
 
 Then restart: `make restart`
 
-> **Note:** `make install` overwrites the plist. To persist this setting, also edit `scripts/com.evansenter.claude-event-bus.plist` (uncomment the HOST lines).
+> **Note:** `make install` overwrites the plist. To persist this setting, also edit `scripts/com.evansenter.agent-event-bus.plist` (uncomment the HOST lines).
 
 **Client machines:**
 
