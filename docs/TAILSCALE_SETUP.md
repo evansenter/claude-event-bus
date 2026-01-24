@@ -125,7 +125,7 @@ Or add to Claude Code settings (`~/.claude/settings.json`):
 # Test via CLI
 agent-event-bus-cli sessions
 
-# Or in Claude Code, the event-bus MCP tools should now work
+# Or in Claude Code, the agent-event-bus MCP tools should now work
 ```
 
 ---

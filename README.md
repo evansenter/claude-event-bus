@@ -34,7 +34,7 @@ cd agent-event-bus
 make install
 ```
 
-Installs: venv, LaunchAgent (auto-start), CLI (`~/.local/bin/agent-agent-event-bus-cli`), MCP server.
+Installs: venv, LaunchAgent (auto-start), CLI (`~/.local/bin/agent-event-bus-cli`), MCP server.
 
 ### Remote Server (CLI-only)
 
