@@ -26,7 +26,8 @@ cp ~/.claude/contrib/agent-event-bus/data.db ~/.claude/contrib/agent-event-bus/d
 ## Commands
 
 ```bash
-make install    # Full install (venv + LaunchAgent + CLI + MCP)
+make install-server  # Server: runs event bus locally
+make install-client REMOTE_URL=...  # Client: connects to remote server
 make uninstall  # Remove everything (preserves DB)
 make dev        # Install with dev dependencies
 make check      # Format + lint + test
