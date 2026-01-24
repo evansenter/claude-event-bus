@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
-from event_bus.middleware import (
+from agent_event_bus.middleware import (
     _BOLD,
     _CYAN,
     _DIM,
@@ -145,7 +145,7 @@ class TestFormatResult:
         ]
         # Mock active sessions map (session_id → display_id)
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={"brave-tiger": "brave-tiger", "happy-falcon": "happy-falcon"},
         ):
             result = _format_result({"events": events, "next_cursor": "2"})
@@ -183,7 +183,7 @@ class TestFormatResult:
         ]
         # Mock active sessions map for consistent behavior
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={"brave-tiger": "brave-tiger"},
         ):
             result = _format_result({"events": events, "next_cursor": "2"})
@@ -414,7 +414,7 @@ class TestInactiveSessionHighlighting:
         ]
         # Mock _get_active_sessions_map to return our session as active
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={"brave-tiger": "brave-tiger"},
         ):
             result = _format_result({"events": events, "next_cursor": "1"})
@@ -435,7 +435,7 @@ class TestInactiveSessionHighlighting:
         ]
         # Mock _get_active_sessions_map to return empty (no active sessions)
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={},
         ):
             result = _format_result({"events": events, "next_cursor": "1"})
@@ -450,7 +450,7 @@ class TestInactiveSessionHighlighting:
         ]
         # Mock to mark only active-tiger as active
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={"active-tiger": "active-tiger"},
         ):
             result = _format_result({"events": events, "next_cursor": "2"})
@@ -470,7 +470,7 @@ class TestInactiveSessionHighlighting:
         # zebra-active and beta-active are active, alpha-gone is not
         # Despite alpha-gone being first alphabetically, active sessions come first
         with patch(
-            "event_bus.middleware._get_active_sessions_map",
+            "agent_event_bus.middleware._get_active_sessions_map",
             return_value={"zebra-active": "zebra-active", "beta-active": "beta-active"},
         ):
             result = _format_result({"events": events, "next_cursor": "3"})

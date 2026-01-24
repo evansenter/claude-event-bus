@@ -36,11 +36,11 @@ dev = [
 ]
 
 [project.scripts]
-event-bus = "event_bus.server:main"
-event-bus-cli = "event_bus.cli:main"
+agent-event-bus = "agent_event_bus.server:main"
+agent-event-bus-cli = "agent_event_bus.cli:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/event_bus"]
+packages = ["src/agent_event_bus"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

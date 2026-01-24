@@ -10,15 +10,15 @@ import pytest
 def pytest_configure(config):
     """Set up temp DB before any imports happen.
 
-    This runs before test collection, ensuring EVENT_BUS_DB is set before
+    This runs before test collection, ensuring AGENT_EVENT_BUS_DB is set before
     server.py is imported (which initializes storage at module level).
     """
     temp_db = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-    os.environ["EVENT_BUS_DB"] = temp_db.name
+    os.environ["AGENT_EVENT_BUS_DB"] = temp_db.name
     # Prevent test migrations from logging to production log file
-    os.environ["EVENT_BUS_TESTING"] = "1"
+    os.environ["AGENT_EVENT_BUS_TESTING"] = "1"
     # Disable Tailscale auth for tests
-    os.environ["EVENT_BUS_AUTH_DISABLED"] = "1"
+    os.environ["AGENT_EVENT_BUS_AUTH_DISABLED"] = "1"
     # Store path for cleanup
     config._temp_db_path = temp_db.name
 
@@ -44,9 +44,9 @@ def storage(temp_db):
     """Create a storage instance with a temporary database.
 
     Note: Import is inside fixture to avoid triggering module-level storage
-    initialization before EVENT_BUS_DB is set by pytest_configure.
+    initialization before AGENT_EVENT_BUS_DB is set by pytest_configure.
     """
-    from event_bus.storage import SQLiteStorage
+    from agent_event_bus.storage import SQLiteStorage
 
     return SQLiteStorage(db_path=temp_db)
 
@@ -56,16 +56,16 @@ def clean_storage():
     """Clean the storage before each test.
 
     Note: Imports are inside fixture to avoid triggering module-level storage
-    initialization in server.py before EVENT_BUS_DB is set by pytest_configure.
+    initialization in server.py before AGENT_EVENT_BUS_DB is set by pytest_configure.
     """
-    from event_bus import server
-    from event_bus.storage import SQLiteStorage
+    from agent_event_bus import server
+    from agent_event_bus.storage import SQLiteStorage
 
     # Clear all sessions and events
     for session in server.storage.list_sessions():
         server.storage.delete_session(session.id)
     # Clear events by recreating storage
-    server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+    server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
     yield
 
 
@@ -88,7 +88,7 @@ def mock_dm_notifications(request):
         yield None
         return
 
-    with patch("event_bus.server._notify_dm_recipient") as mock:
+    with patch("agent_event_bus.server._notify_dm_recipient") as mock:
         yield mock
 
 

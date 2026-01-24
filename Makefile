@@ -48,12 +48,12 @@ install: venv
 	@echo "Adding to Claude Code..."
 	@CLAUDE_CMD=$$(command -v claude || echo "$$HOME/.local/bin/claude"); \
 	if [ -x "$$CLAUDE_CMD" ]; then \
-		$$CLAUDE_CMD mcp add --transport http --scope user event-bus http://localhost:8080/mcp 2>/dev/null && \
-			echo "Added event-bus to Claude Code" || \
-			echo "event-bus already configured in Claude Code"; \
+		$$CLAUDE_CMD mcp add --transport http --scope user agent-event-bus http://localhost:8080/mcp 2>/dev/null && \
+			echo "Added agent-event-bus to Claude Code" || \
+			echo "agent-event-bus already configured in Claude Code"; \
 	else \
 		echo "Note: claude not found. Run manually:"; \
-		echo "  claude mcp add --transport http --scope user event-bus http://localhost:8080/mcp"; \
+		echo "  claude mcp add --transport http --scope user agent-event-bus http://localhost:8080/mcp"; \
 	fi
 	@echo ""
 	@echo "Installation complete!"
@@ -72,10 +72,10 @@ install-cli: venv
 	@echo "CLI-only installation complete!"
 	@echo ""
 	@echo "For remote event bus, set in your shell profile:"
-	@echo '  export EVENT_BUS_URL="http://<server-ip>:8080/mcp"'
+	@echo '  export AGENT_EVENT_BUS_URL="http://<server-ip>:8080/mcp"'
 	@echo ""
 	@echo "And add MCP server to Claude Code:"
-	@echo '  claude mcp add --transport http --scope user event-bus http://<server-ip>:8080/mcp'
+	@echo '  claude mcp add --transport http --scope user agent-event-bus http://<server-ip>:8080/mcp'
 
 # Uninstall: service + CLI + MCP config
 uninstall:
@@ -89,9 +89,9 @@ uninstall:
 	@echo "Removing from Claude Code..."
 	@CLAUDE_CMD=$$(command -v claude || echo "$$HOME/.local/bin/claude"); \
 	if [ -x "$$CLAUDE_CMD" ]; then \
-		$$CLAUDE_CMD mcp remove --scope user event-bus 2>/dev/null && \
-			echo "Removed event-bus from Claude Code" || \
-			echo "event-bus not found in Claude Code"; \
+		$$CLAUDE_CMD mcp remove --scope user agent-event-bus 2>/dev/null && \
+			echo "Removed agent-event-bus from Claude Code" || \
+			echo "agent-event-bus not found in Claude Code"; \
 	fi
 	@echo ""
 	@echo "Uninstall complete!"
@@ -100,16 +100,16 @@ uninstall:
 # Restart the server (reload code changes)
 restart:
 	@if [ "$$(uname)" = "Darwin" ]; then \
-		PLIST="$$HOME/Library/LaunchAgents/com.evansenter.claude-event-bus.plist"; \
+		PLIST="$$HOME/Library/LaunchAgents/com.evansenter.agent-event-bus.plist"; \
 		if [ -f "$$PLIST" ]; then \
-			echo "Restarting event-bus..."; \
+			echo "Restarting agent-event-bus..."; \
 			launchctl unload "$$PLIST" 2>/dev/null || true; \
 			launchctl load "$$PLIST"; \
 			sleep 1; \
-			if launchctl list | grep -q "com.evansenter.claude-event-bus"; then \
+			if launchctl list | grep -q "com.evansenter.agent-event-bus"; then \
 				echo "Service restarted successfully"; \
 			else \
-				echo "Error: Service failed to start. Check ~/.claude/contrib/event-bus/event-bus.err"; \
+				echo "Error: Service failed to start. Check ~/.claude/contrib/agent-event-bus/agent-event-bus.err"; \
 				exit 1; \
 			fi; \
 		else \
@@ -117,13 +117,13 @@ restart:
 			exit 1; \
 		fi; \
 	else \
-		echo "Restarting event-bus..."; \
-		systemctl --user restart claude-event-bus; \
+		echo "Restarting agent-event-bus..."; \
+		systemctl --user restart agent-event-bus; \
 		sleep 1; \
-		if systemctl --user is-active claude-event-bus &>/dev/null; then \
+		if systemctl --user is-active agent-event-bus &>/dev/null; then \
 			echo "Service restarted successfully"; \
 		else \
-			echo "Error: Service failed to start. Check ~/.claude/contrib/event-bus/event-bus.err"; \
+			echo "Error: Service failed to start. Check ~/.claude/contrib/agent-event-bus/agent-event-bus.err"; \
 			exit 1; \
 		fi; \
 	fi
@@ -133,4 +133,4 @@ reinstall: install restart
 
 # Tail the event bus log
 logs:
-	@tail -f ~/.claude/contrib/event-bus/event-bus.log
+	@tail -f ~/.claude/contrib/agent-event-bus/agent-event-bus.log

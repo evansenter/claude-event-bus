@@ -6,7 +6,7 @@ MCP server for cross-session Claude Code communication. Sessions register, publi
 
 ## DATABASE PROTECTION
 
-**The database at `~/.claude/contrib/event-bus/data.db` contains irreplaceable event history.**
+**The database at `~/.claude/contrib/agent-event-bus/data.db` contains irreplaceable event history.**
 
 ### NEVER:
 - Add code that deletes the database file
@@ -20,7 +20,7 @@ MCP server for cross-session Claude Code communication. Sessions register, publi
 
 ### Before schema changes:
 ```bash
-cp ~/.claude/contrib/event-bus/data.db ~/.claude/contrib/event-bus/data.db.backup-$(date +%Y%m%d-%H%M%S)
+cp ~/.claude/contrib/agent-event-bus/data.db ~/.claude/contrib/agent-event-bus/data.db.backup-$(date +%Y%m%d-%H%M%S)
 ```
 
 ## Commands
@@ -45,21 +45,21 @@ Code changes to `server.py`, `storage.py`, `helpers.py` require restart.
 ## Architecture
 
 ```
-src/event_bus/
+src/agent_event_bus/
 ├── server.py      # MCP tools and entry point
 ├── storage.py     # SQLite backend (Session, Event, SQLiteStorage)
 ├── helpers.py     # Notifications, repo extraction
-├── middleware.py  # Request logging → ~/.claude/contrib/event-bus/event-bus.log
+├── middleware.py  # Request logging → ~/.claude/contrib/agent-event-bus/agent-event-bus.log
 ├── session_ids.py # Docker-style display_id generation
 ├── cli.py         # CLI wrapper for shell scripts
-└── guide.md       # Usage guide (event-bus://guide resource)
+└── guide.md       # Usage guide (agent-event-bus://guide resource)
 ```
 
 ## MCP Tools
 
 `register_session`, `list_sessions`, `list_channels`, `publish_event`, `get_events`, `unregister_session`, `notify`
 
-**Usage guide**: `event-bus://guide` resource. Keep it updated when changing APIs.
+**Usage guide**: `agent-event-bus://guide` resource. Keep it updated when changing APIs.
 
 ### Tool Docstrings
 
@@ -120,25 +120,25 @@ CLI and MCP expose the same functionality:
 
 ```bash
 # Watch live activity
-tail -f ~/.claude/contrib/event-bus/event-bus.log
+tail -f ~/.claude/contrib/agent-event-bus/agent-event-bus.log
 
 # Override database path
-EVENT_BUS_DB=/path/to/db.sqlite event-bus
+AGENT_EVENT_BUS_DB=/path/to/db.sqlite agent-event-bus
 
 # Dev mode console logging
-DEV_MODE=1 event-bus
+DEV_MODE=1 agent-event-bus
 
 # Custom notification icon (requires terminal-notifier)
-EVENT_BUS_ICON=/path/to/icon.png event-bus
+AGENT_EVENT_BUS_ICON=/path/to/icon.png agent-event-bus
 
 # Disable Tailscale auth (for testing/local dev)
-EVENT_BUS_AUTH_DISABLED=1 event-bus
+AGENT_EVENT_BUS_AUTH_DISABLED=1 agent-event-bus
 ```
 
 Notifications: Uses terminal-notifier if installed (`brew install terminal-notifier`), falls back to osascript.
 
 ## See Also
 
-- **Usage patterns, event types, channels**: `event-bus://guide` or `src/event_bus/guide.md`
-- **CLI usage**: `event-bus-cli --help`
+- **Usage patterns, event types, channels**: `agent-event-bus://guide` or `src/agent_event_bus/guide.md`
+- **CLI usage**: `agent-event-bus-cli --help`
 - **Installation**: `README.md`

@@ -19,30 +19,30 @@ from typing import Literal
 
 from fastmcp import FastMCP
 
-from event_bus.helpers import (
+from agent_event_bus.helpers import (
     _dev_notify,
     extract_repo_from_cwd,
     is_client_alive,
     send_notification,
 )
-from event_bus.middleware import RequestLoggingMiddleware, TailscaleAuthMiddleware
-from event_bus.session_ids import generate_session_id
-from event_bus.storage import Session, SQLiteStorage
+from agent_event_bus.middleware import RequestLoggingMiddleware, TailscaleAuthMiddleware
+from agent_event_bus.session_ids import generate_session_id
+from agent_event_bus.storage import Session, SQLiteStorage
 
 # Configure logging
 # Always log to ~/.claude/contrib/event-bus/event-bus.log for tail -f access
 # In dev mode, also log to console
 # Skip file logging during tests to avoid polluting production logs
-LOG_FILE = Path.home() / ".claude" / "contrib" / "event-bus" / "event-bus.log"
+LOG_FILE = Path.home() / ".claude" / "contrib" / "agent-event-bus" / "agent-event-bus.log"
 
-logger = logging.getLogger("event-bus")
+logger = logging.getLogger("agent-event-bus")
 logger.setLevel(logging.DEBUG if os.environ.get("DEV_MODE") else logging.INFO)
 
 # File handler - skip during tests, guard against reimport duplication
-# Check both PYTEST_CURRENT_TEST (set per-test) and EVENT_BUS_TESTING (set in conftest.py)
+# Check both PYTEST_CURRENT_TEST (set per-test) and AGENT_EVENT_BUS_TESTING (set in conftest.py)
 if (
     not os.environ.get("PYTEST_CURRENT_TEST")
-    and not os.environ.get("EVENT_BUS_TESTING")
+    and not os.environ.get("AGENT_EVENT_BUS_TESTING")
     and not logger.handlers
 ):
     LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -64,13 +64,13 @@ if (
 MAX_PAYLOAD_PREVIEW = 50  # Max chars to show in notification previews
 
 # Initialize MCP server
-mcp = FastMCP("event-bus")
+mcp = FastMCP("agent-event-bus")
 
 # SQLite-backed storage (persists across restarts)
 storage = SQLiteStorage()
 
 
-@mcp.resource("event-bus://guide", description="Usage guide and best practices")
+@mcp.resource("agent-event-bus://guide", description="Usage guide and best practices")
 def usage_guide() -> str:
     """Return the event bus usage guide from external markdown file."""
     guide_path = Path(__file__).parent / "guide.md"
@@ -516,10 +516,10 @@ def create_app():
     1. TailscaleAuthMiddleware - requires Tailscale identity headers
     2. RequestLoggingMiddleware - logs MCP tool calls
 
-    All MCP tool calls are logged to ~/.claude/contrib/event-bus/event-bus.log.
-    Use `tail -f ~/.claude/contrib/event-bus/event-bus.log` to watch activity.
+    All MCP tool calls are logged to ~/.claude/contrib/agent-event-bus/agent-event-bus.log.
+    Use `tail -f ~/.claude/contrib/agent-event-bus/agent-event-bus.log` to watch activity.
 
-    Set EVENT_BUS_AUTH_DISABLED=1 to disable auth (for testing/local dev).
+    Set AGENT_EVENT_BUS_AUTH_DISABLED=1 to disable auth (for testing/local dev).
     """
     # stateless_http=True allows resilience to server restarts
     app = mcp.http_app(stateless_http=True)
@@ -528,7 +528,7 @@ def create_app():
     app = RequestLoggingMiddleware(app)
 
     # Wrap with auth middleware unless disabled
-    auth_disabled = os.environ.get("EVENT_BUS_AUTH_DISABLED", "").lower() in ("1", "true")
+    auth_disabled = os.environ.get("AGENT_EVENT_BUS_AUTH_DISABLED", "").lower() in ("1", "true")
     if not auth_disabled:
         app = TailscaleAuthMiddleware(app)
         logger.info("Tailscale auth enabled - requests require identity headers")
@@ -545,10 +545,10 @@ def main():
     port = int(os.environ.get("PORT", 8080))
     host = os.environ.get("HOST", "127.0.0.1")
 
-    logger.info(f"Starting Claude Event Bus on {host}:{port}")
-    print(f"Starting Claude Event Bus on {host}:{port}")
+    logger.info(f"Starting Agent Event Bus on {host}:{port}")
+    print(f"Starting Agent Event Bus on {host}:{port}")
     print(
-        f"Add to Claude Code: claude mcp add --transport http --scope user event-bus http://{host}:{port}/mcp"
+        f"Add to Claude Code: claude mcp add --transport http --scope user agent-event-bus http://{host}:{port}/mcp"
     )
 
     # Disable uvicorn's access log - we have our own middleware logging

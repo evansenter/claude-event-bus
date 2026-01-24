@@ -4,13 +4,13 @@ import os
 from datetime import datetime
 from unittest.mock import patch
 
-from event_bus.helpers import (
+from agent_event_bus.helpers import (
     _dev_notify,
     escape_applescript_string,
     extract_repo_from_cwd,
     is_client_alive,
 )
-from event_bus.storage import Session
+from agent_event_bus.storage import Session
 
 
 class TestExtractRepoFromCwd:
@@ -240,7 +240,7 @@ class TestDevNotify:
         """Test _dev_notify sends notification when DEV_MODE is set."""
         monkeypatch.setenv("DEV_MODE", "1")
 
-        with patch("event_bus.helpers.send_notification") as mock_notify:
+        with patch("agent_event_bus.helpers.send_notification") as mock_notify:
             mock_notify.return_value = True
             _dev_notify("test_tool", "summary message")
             mock_notify.assert_called_once_with("🔧 test_tool", "summary message")
@@ -249,6 +249,6 @@ class TestDevNotify:
         """Test _dev_notify is silent when DEV_MODE is not set."""
         monkeypatch.delenv("DEV_MODE", raising=False)
 
-        with patch("event_bus.helpers.send_notification") as mock_notify:
+        with patch("agent_event_bus.helpers.send_notification") as mock_notify:
             _dev_notify("test_tool", "summary")
             mock_notify.assert_not_called()

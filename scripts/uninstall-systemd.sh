@@ -1,5 +1,5 @@
 #!/bin/bash
-# Uninstall the event bus systemd user service (preserves database)
+# Uninstall the agent event bus systemd user service (preserves database)
 
 set -e
 
@@ -29,5 +29,5 @@ fi
 "$SCRIPT_DIR/uninstall-cli.sh"
 
 echo ""
-echo "Event bus uninstalled."
-echo "Note: Database preserved at ~/.claude/contrib/event-bus/data.db"
+echo "Agent Event Bus uninstalled."
+echo "Note: Database preserved at ~/.claude/contrib/agent-event-bus/data.db"

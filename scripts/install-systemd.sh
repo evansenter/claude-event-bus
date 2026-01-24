@@ -1,5 +1,5 @@
 #!/bin/bash
-# Install the event bus as a Linux systemd user service (auto-starts on login)
+# Install the agent event bus as a Linux systemd user service (auto-starts on login)
 
 set -e
 
@@ -20,7 +20,7 @@ fi
 
 # Create directories if needed
 mkdir -p "$SERVICE_DIR"
-mkdir -p "$HOME/.claude/contrib/event-bus"
+mkdir -p "$HOME/.claude/contrib/agent-event-bus"
 
 # Stop existing service if running
 if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
@@ -44,9 +44,9 @@ systemctl --user enable --now "$SERVICE_NAME"
 sleep 1
 if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
     echo ""
-    echo "Event bus installed and running!"
-    echo "  Logs: ~/.claude/contrib/event-bus/event-bus.log"
-    echo "  Errors: ~/.claude/contrib/event-bus/event-bus.err"
+    echo "Agent Event Bus installed and running!"
+    echo "  Logs: ~/.claude/contrib/agent-event-bus/event-bus.log"
+    echo "  Errors: ~/.claude/contrib/agent-event-bus/event-bus.err"
     echo "  Status: systemctl --user status $SERVICE_NAME"
     echo ""
 
@@ -58,6 +58,6 @@ if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then
 else
     echo "Error: Service failed to start. Check logs:"
     echo "  journalctl --user -u $SERVICE_NAME"
-    echo "  ~/.claude/contrib/event-bus/event-bus.err"
+    echo "  ~/.claude/contrib/agent-event-bus/event-bus.err"
     exit 1
 fi

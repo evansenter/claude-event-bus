@@ -1,5 +1,5 @@
 #!/bin/bash
-# Uninstall the event bus LaunchAgent
+# Uninstall the agent event bus LaunchAgent
 
 set -e
 
@@ -17,12 +17,12 @@ launchctl unload "$PLIST_DEST" 2>/dev/null || true
 echo "Removing plist..."
 rm -f "$PLIST_DEST"
 
-echo "Event bus LaunchAgent uninstalled."
+echo "Agent Event Bus LaunchAgent uninstalled."
 
 # Also uninstall CLI
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 "$SCRIPT_DIR/uninstall-cli.sh"
 
 echo ""
-echo "Note: Data remains at ~/.claude/contrib/event-bus/"
-osascript -e 'display notification "LaunchAgent uninstalled" with title "Event Bus"' 2>/dev/null
+echo "Note: Data remains at ~/.claude/contrib/agent-event-bus/"
+osascript -e 'display notification "LaunchAgent uninstalled" with title "Agent Event Bus"' 2>/dev/null

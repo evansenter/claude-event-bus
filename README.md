@@ -50,7 +50,7 @@ Installs only the CLI for hooks/scripts. Then configure the remote connection:
 
 ```bash
 # In your shell profile (~/.extra, ~/.zshrc, etc.)
-export EVENT_BUS_URL="http://<server-ip>:8080/mcp"
+export AGENT_EVENT_BUS_URL="http://<server-ip>:8080/mcp"
 
 # Add MCP server to Claude Code
 claude mcp add --transport http --scope user event-bus http://<server-ip>:8080/mcp
@@ -131,7 +131,7 @@ make install-cli  # CLI only, no local server
 Then configure the remote connection:
 ```bash
 # In shell profile
-export EVENT_BUS_URL="http://<tailscale-ip>:8080/mcp"
+export AGENT_EVENT_BUS_URL="http://<tailscale-ip>:8080/mcp"
 
 # Add MCP server to Claude Code
 claude mcp add --transport http --scope user event-bus http://<tailscale-ip>:8080/mcp

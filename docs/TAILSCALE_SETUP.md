@@ -100,7 +100,7 @@ claude mcp add --transport http --scope user event-bus https://YOUR-SERVER.TAILN
 Add to your shell profile (`~/.zshrc`, `~/.bashrc`, or `~/.extra`):
 
 ```bash
-export EVENT_BUS_URL="https://YOUR-SERVER.TAILNET.ts.net/mcp"
+export AGENT_EVENT_BUS_URL="https://YOUR-SERVER.TAILNET.ts.net/mcp"
 ```
 
 Or add to Claude Code settings (`~/.claude/settings.json`):
@@ -108,7 +108,7 @@ Or add to Claude Code settings (`~/.claude/settings.json`):
 ```json
 {
   "env": {
-    "EVENT_BUS_URL": "https://YOUR-SERVER.TAILNET.ts.net/mcp"
+    "AGENT_EVENT_BUS_URL": "https://YOUR-SERVER.TAILNET.ts.net/mcp"
   }
 }
 ```
@@ -144,7 +144,7 @@ This binds to `localhost:8080` only. No Tailscale setup needed.
 
 To disable authentication for local-only use, set in your service config:
 ```bash
-EVENT_BUS_AUTH_DISABLED=1
+AGENT_EVENT_BUS_AUTH_DISABLED=1
 ```
 
 ---
@@ -264,7 +264,7 @@ def create_app():
     app = RequestLoggingMiddleware(app)
 
     # Auth middleware (outermost) - unless disabled
-    if not os.environ.get("EVENT_BUS_AUTH_DISABLED", "").lower() in ("1", "true"):
+    if not os.environ.get("AGENT_EVENT_BUS_AUTH_DISABLED", "").lower() in ("1", "true"):
         app = TailscaleAuthMiddleware(app)
 
     return app
@@ -276,7 +276,7 @@ def create_app():
 # tests/conftest.py
 def pytest_configure(config):
     # ... other setup ...
-    os.environ["EVENT_BUS_AUTH_DISABLED"] = "1"
+    os.environ["AGENT_EVENT_BUS_AUTH_DISABLED"] = "1"
 ```
 
 #### 4. Set up tailscale serve on the server

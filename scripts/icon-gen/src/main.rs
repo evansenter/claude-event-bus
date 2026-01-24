@@ -1,4 +1,4 @@
-//! Generate event-bus notification icon using Gemini image generation.
+//! Generate agent-event-bus notification icon using Gemini image generation.
 //!
 //! Creates a pixel art Birman cat with ball of yarn for macOS notifications.
 //!
@@ -105,7 +105,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 save_image(&bytes, &output_dir)?;
                 println!("\nIcons saved to: {}", output_dir.display());
                 println!(
-                    "\nTo use:\n  EVENT_BUS_ICON={}/icon-512.png event-bus",
+                    "\nTo use:\n  AGENT_EVENT_BUS_ICON={}/icon-512.png agent-event-bus",
                     output_dir.display()
                 );
             }
