@@ -9,7 +9,7 @@
     <array>
         <string>__VENV_PYTHON__</string>
         <string>-m</string>
-        <string>event_bus.server</string>
+        <string>agent_event_bus.server</string>
     </array>
 
     <key>WorkingDirectory</key>
@@ -21,7 +21,7 @@
         <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
         <key>PYTHONPATH</key>
         <string>__PROJECT_DIR__/src</string>
-        <key>EVENT_BUS_ICON</key>
+        <key>AGENT_EVENT_BUS_ICON</key>
         <string>__PROJECT_DIR__/assets/icon.png</string>
         <!-- Multi-machine: Set HOST to 0.0.0.0 to accept remote connections -->
         <!-- <key>HOST</key> -->
@@ -35,10 +35,10 @@
     <true/>
 
     <key>StandardOutPath</key>
-    <string>__HOME__/.claude/contrib/event-bus/event-bus.log</string>
+    <string>__HOME__/.claude/contrib/agent-event-bus/agent-event-bus.log</string>
 
     <key>StandardErrorPath</key>
-    <string>__HOME__/.claude/contrib/event-bus/event-bus.err</string>
+    <string>__HOME__/.claude/contrib/agent-event-bus/agent-event-bus.err</string>
 
     <key>ProcessType</key>
     <string>Background</string>

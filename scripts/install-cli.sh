@@ -1,13 +1,13 @@
 #!/bin/bash
-# Install event-bus-cli to ~/.local/bin as a symlink
+# Install agent-event-bus-cli to ~/.local/bin as a symlink
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-VENV_CLI="$PROJECT_DIR/.venv/bin/event-bus-cli"
+VENV_CLI="$PROJECT_DIR/.venv/bin/agent-event-bus-cli"
 INSTALL_DIR="$HOME/.local/bin"
-CLI_PATH="$INSTALL_DIR/event-bus-cli"
+CLI_PATH="$INSTALL_DIR/agent-event-bus-cli"
 
 # Check venv CLI exists
 if [[ ! -f "$VENV_CLI" ]]; then
@@ -23,7 +23,7 @@ mkdir -p "$INSTALL_DIR"
 if [[ -e "$CLI_PATH" || -L "$CLI_PATH" ]]; then
     # Skip if already correctly symlinked
     if [[ -L "$CLI_PATH" && "$(readlink "$CLI_PATH")" == "$VENV_CLI" ]]; then
-        echo "event-bus-cli already symlinked correctly"
+        echo "agent-event-bus-cli already symlinked correctly"
         exit 0
     fi
     rm -f "$CLI_PATH"
@@ -31,7 +31,7 @@ fi
 
 # Create symlink
 ln -s "$VENV_CLI" "$CLI_PATH"
-echo "Installed event-bus-cli to $CLI_PATH (symlink)"
+echo "Installed agent-event-bus-cli to $CLI_PATH (symlink)"
 
 # Check if ~/.local/bin is in PATH
 if [[ ":$PATH:" != *":$INSTALL_DIR:"* ]]; then
@@ -45,8 +45,8 @@ fi
 
 # Test it works
 if "$CLI_PATH" --help > /dev/null 2>&1; then
-    echo "Verified: event-bus-cli is working"
+    echo "Verified: agent-event-bus-cli is working"
 else
-    echo "Warning: event-bus-cli installed but test failed"
+    echo "Warning: agent-event-bus-cli installed but test failed"
     exit 1
 fi

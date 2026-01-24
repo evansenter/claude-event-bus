@@ -1,11 +1,11 @@
 #!/bin/bash
 # Test script for auto-notify on DMs feature
-# Simulates two Claude Code sessions sending DMs via the event bus
+# Simulates two Claude Code sessions sending DMs via the agent event bus
 
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-CLI="${HOME}/.local/bin/event-bus-cli"
+CLI="${HOME}/.local/bin/agent-event-bus-cli"
 
 # Session IDs for cleanup
 SESSION_A_ID=""
@@ -28,11 +28,11 @@ YELLOW='\033[1;33m'
 RED='\033[0;31m'
 NC='\033[0m' # No Color
 
-echo -e "${BLUE}=== Event Bus DM Notification Test ===${NC}\n"
+echo -e "${BLUE}=== Agent Event Bus DM Notification Test ===${NC}\n"
 
-# Check if event-bus-cli exists
+# Check if agent-event-bus-cli exists
 if [[ ! -x "$CLI" ]]; then
-    echo -e "${RED}Error: event-bus-cli not found at $CLI${NC}"
+    echo -e "${RED}Error: agent-event-bus-cli not found at $CLI${NC}"
     echo "Run 'make install' first to install the CLI"
     exit 1
 fi
@@ -44,7 +44,7 @@ if ! command -v jq &> /dev/null; then
     exit 1
 fi
 
-# Check if event bus server is running
+# Check if agent event bus server is running
 if ! curl -s http://127.0.0.1:8080/health > /dev/null 2>&1; then
     echo -e "${YELLOW}Warning: Event bus server doesn't appear to be running${NC}"
     echo "Start it with: ./scripts/start.sh"
@@ -152,4 +152,4 @@ echo "  1. Did you see notifications for DMs to session:$SESSION_B_ID?"
 echo "  2. Did you NOT see notification for repo:agent-event-bus?"
 echo
 echo "Check server logs for any warnings:"
-echo "  tail -f ~/.claude/contrib/event-bus/event-bus.log"
+echo "  tail -f ~/.claude/contrib/agent-event-bus/agent-event-bus.log"

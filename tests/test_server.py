@@ -7,8 +7,8 @@ from datetime import datetime
 
 import pytest
 
-from event_bus import server
-from event_bus.storage import Session, SQLiteStorage
+from agent_event_bus import server
+from agent_event_bus.storage import Session, SQLiteStorage
 
 # Access the underlying functions from FunctionTool wrappers
 register_session = server.register_session.fn
@@ -271,7 +271,7 @@ class TestGetEvents:
     def test_get_events(self):
         """Test getting events."""
         # Clear any existing events
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         publish_event("event1", "payload1")
         publish_event("event2", "payload2")
@@ -320,7 +320,7 @@ class TestGetEvents:
     def test_get_events_with_event_types_filter(self):
         """Test filtering events by event_types parameter."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         # Publish events of different types
         publish_event("task_completed", "finished task")
@@ -339,7 +339,7 @@ class TestGetEvents:
     def test_get_events_empty_event_types(self):
         """Test that empty event_types list returns all events (same as None)."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         publish_event("type1", "msg1")
         publish_event("type2", "msg2")
@@ -364,7 +364,7 @@ class TestGetEventsOrdering:
     def test_desc_ordering(self, order, expected_order):
         """Test DESC ordering returns newest first (default and explicit)."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         publish_event("first", "1")
         publish_event("second", "2")
@@ -381,7 +381,7 @@ class TestGetEventsOrdering:
     def test_explicit_order_asc(self):
         """Test that order='asc' returns oldest first."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         # Get cursor before our test events
         cursor = server.storage.get_cursor()
@@ -399,7 +399,7 @@ class TestGetEventsOrdering:
     def test_polling_pattern_works(self):
         """Test the recommended polling pattern works correctly."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         # Publish initial events
         publish_event("before_registration", "0")
@@ -426,7 +426,7 @@ class TestGetEventsOrdering:
     def test_cursor_with_order_desc(self):
         """Test using cursor with order='desc'."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         result1 = publish_event("first", "1")
         cursor = str(result1["event_id"])
@@ -444,7 +444,7 @@ class TestGetEventsOrdering:
     def test_cursor_with_order_asc(self):
         """Test using cursor with order='asc'."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         result1 = publish_event("first", "1")
         cursor = str(result1["event_id"])
@@ -462,7 +462,7 @@ class TestGetEventsOrdering:
     def test_future_cursor_returns_empty(self):
         """Test that cursor beyond current events returns empty list."""
         # Clear storage
-        server.storage = SQLiteStorage(db_path=os.environ["EVENT_BUS_DB"])
+        server.storage = SQLiteStorage(db_path=os.environ["AGENT_EVENT_BUS_DB"])
 
         # Publish some events
         result = publish_event("test", "payload")
@@ -1028,7 +1028,7 @@ class TestUsageGuide:
 
     def test_usage_guide_returns_content(self):
         """Test that usage_guide resource returns guide content."""
-        from event_bus import server
+        from agent_event_bus import server
 
         # The @mcp.resource() decorator wraps the function in FunctionResource
         # Access the underlying function via fn attribute
@@ -1044,7 +1044,7 @@ class TestUsageGuide:
         """Test that usage_guide reads from the guide.md file."""
         from pathlib import Path
 
-        from event_bus import server
+        from agent_event_bus import server
 
         # Read the guide directly
         guide_path = Path(server.__file__).parent / "guide.md"

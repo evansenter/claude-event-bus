@@ -1,5 +1,5 @@
 #!/bin/bash
-# Run event bus in development mode (foreground, auto-reload, verbose logging)
+# Run agent event bus in development mode (foreground, auto-reload, verbose logging)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
@@ -17,7 +17,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
         echo "Stopping LaunchAgent for dev mode..."
         launchctl unload "$PLIST" 2>/dev/null
         SERVICE_WAS_RUNNING=true
-        osascript -e 'display notification "Stopped for dev mode" with title "Event Bus"' 2>/dev/null
+        osascript -e 'display notification "Stopped for dev mode" with title "Agent Event Bus"' 2>/dev/null
     fi
 else
     SERVICE_NAME="agent-event-bus"
@@ -35,7 +35,7 @@ cleanup() {
         if [[ "$(uname)" == "Darwin" ]]; then
             echo "Restarting LaunchAgent..."
             launchctl load "$PLIST"
-            osascript -e 'display notification "LaunchAgent restarted" with title "Event Bus"' 2>/dev/null
+            osascript -e 'display notification "LaunchAgent restarted" with title "Agent Event Bus"' 2>/dev/null
         else
             echo "Restarting systemd service..."
             systemctl --user start "$SERVICE_NAME"
@@ -44,10 +44,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-echo "Starting event bus in dev mode (Ctrl+C to stop)..."
-echo "Add to Claude Code: claude mcp add --transport http --scope user event-bus http://127.0.0.1:8080/mcp"
+echo "Starting agent event bus in dev mode (Ctrl+C to stop)..."
+echo "Add to Claude Code: claude mcp add --transport http --scope user agent-event-bus http://127.0.0.1:8080/mcp"
 echo ""
 
 # DEV_MODE enables request/response body logging
-export EVENT_BUS_ICON="$PROJECT_DIR/assets/icon.png"
-DEV_MODE=1 uvicorn event_bus.server:create_app --host 127.0.0.1 --port 8080 --reload --factory
+export AGENT_EVENT_BUS_ICON="$PROJECT_DIR/assets/icon.png"
+DEV_MODE=1 uvicorn agent_event_bus.server:create_app --host 127.0.0.1 --port 8080 --reload --factory

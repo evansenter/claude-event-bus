@@ -6,7 +6,7 @@ import platform
 import shutil
 import subprocess
 
-logger = logging.getLogger("event-bus")
+logger = logging.getLogger("agent-event-bus")
 
 
 def _sanitize_name(name: str) -> str:
@@ -76,7 +76,7 @@ def send_notification(title: str, message: str, sound: bool = False) -> bool:
     """Send a system notification. Returns True if successful.
 
     On macOS, prefers terminal-notifier (supports custom icons) with osascript fallback.
-    Icon can be set via EVENT_BUS_ICON environment variable (absolute path to PNG).
+    Icon can be set via AGENT_EVENT_BUS_ICON environment variable (absolute path to PNG).
     """
     system = platform.system()
 
@@ -91,7 +91,7 @@ def send_notification(title: str, message: str, sound: bool = False) -> bool:
                     "-message",
                     message,
                     "-group",
-                    "event-bus",  # Group notifications together
+                    "agent-event-bus",  # Group notifications together
                     "-sender",
                     "com.apple.Terminal",  # Use Terminal's notification permissions
                 ]
@@ -99,7 +99,7 @@ def send_notification(title: str, message: str, sound: bool = False) -> bool:
                     cmd.extend(["-sound", "default"])
 
                 # Custom icon support via environment variable
-                icon_path = os.environ.get("EVENT_BUS_ICON")
+                icon_path = os.environ.get("AGENT_EVENT_BUS_ICON")
                 if icon_path and os.path.exists(icon_path):
                     cmd.extend(["-appIcon", icon_path])
 

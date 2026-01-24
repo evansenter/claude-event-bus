@@ -11,7 +11,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-logger = logging.getLogger("event-bus")
+logger = logging.getLogger("agent-event-bus")
 
 # Schema version for migrations
 # Increment this when adding new migrations
@@ -169,9 +169,10 @@ class Event:
 
 # Database paths
 # New canonical path (aligned with session-analytics under contrib/)
-DEFAULT_DB_PATH = Path.home() / ".claude" / "contrib" / "event-bus" / "data.db"
-# Old path for automatic migration
+DEFAULT_DB_PATH = Path.home() / ".claude" / "contrib" / "agent-event-bus" / "data.db"
+# Old paths for automatic migration
 OLD_DB_PATH = Path.home() / ".claude" / "event-bus.db"
+OLD_CONTRIB_DB_PATH = Path.home() / ".claude" / "contrib" / "event-bus" / "data.db"
 
 # Session timeout in seconds (24 hours without activity = dead)
 # Local crashed sessions are cleaned up faster via client liveness check
@@ -185,7 +186,7 @@ class SQLiteStorage:
     def __init__(self, db_path: str | None = None):
         """Initialize storage with optional custom DB path."""
         if db_path is None:
-            db_path = os.environ.get("EVENT_BUS_DB", str(DEFAULT_DB_PATH))
+            db_path = os.environ.get("AGENT_EVENT_BUS_DB", str(DEFAULT_DB_PATH))
 
         self.db_path = Path(db_path)
 
@@ -200,10 +201,20 @@ class SQLiteStorage:
     def _migrate_db_location(self) -> None:
         """Migrate database from old location to new location.
 
-        Old: ~/.claude/event-bus.db
-        New: ~/.claude/contrib/event-bus/data.db
+        Old: ~/.claude/event-bus.db or ~/.claude/contrib/event-bus/data.db
+        New: ~/.claude/contrib/agent-event-bus/data.db
         """
-        if OLD_DB_PATH.exists() and not self.db_path.exists():
+        if self.db_path.exists():
+            return  # Already at new location, nothing to do
+
+        # Try old contrib path first (more recent)
+        if OLD_CONTRIB_DB_PATH.exists():
+            logger.info(f"Migrating database from {OLD_CONTRIB_DB_PATH} to {self.db_path}")
+            self.db_path.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(OLD_CONTRIB_DB_PATH), str(self.db_path))
+            logger.info("Database migration complete")
+        # Fall back to very old path
+        elif OLD_DB_PATH.exists():
             logger.info(f"Migrating database from {OLD_DB_PATH} to {self.db_path}")
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(OLD_DB_PATH), str(self.db_path))

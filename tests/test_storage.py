@@ -3,7 +3,7 @@
 import sqlite3
 from datetime import datetime, timedelta
 
-from event_bus.storage import SESSION_TIMEOUT, Session, SQLiteStorage
+from agent_event_bus.storage import SESSION_TIMEOUT, Session, SQLiteStorage
 
 
 class TestSessionOperations:
@@ -659,10 +659,10 @@ class TestDbLocationMigration:
 
     def test_migrate_db_from_old_to_new_location(self, tmp_path, monkeypatch):
         """Test database migration moves file from old to new location."""
-        import event_bus.storage as storage_module
+        import agent_event_bus.storage as storage_module
 
         old_path = tmp_path / ".claude" / "event-bus.db"
-        new_path = tmp_path / ".claude" / "contrib" / "event-bus" / "data.db"
+        new_path = tmp_path / ".claude" / "contrib" / "agent-event-bus" / "data.db"
 
         # Create old-style DB with proper schema (v1 style)
         old_path.parent.mkdir(parents=True)
@@ -694,8 +694,9 @@ class TestDbLocationMigration:
         """)
         conn.close()
 
-        # Monkeypatch the paths
+        # Monkeypatch the paths (including OLD_CONTRIB_DB_PATH to prevent real path interference)
         monkeypatch.setattr(storage_module, "OLD_DB_PATH", old_path)
+        monkeypatch.setattr(storage_module, "OLD_CONTRIB_DB_PATH", tmp_path / "nonexistent")
         monkeypatch.setattr(storage_module, "DEFAULT_DB_PATH", new_path)
 
         # Initialize storage with the new default path - should trigger migration
@@ -710,13 +711,14 @@ class TestDbLocationMigration:
 
     def test_no_migration_when_old_db_missing(self, tmp_path, monkeypatch):
         """Test that no migration occurs if old DB doesn't exist."""
-        import event_bus.storage as storage_module
+        import agent_event_bus.storage as storage_module
 
         old_path = tmp_path / ".claude" / "event-bus.db"
-        new_path = tmp_path / ".claude" / "contrib" / "event-bus" / "data.db"
+        new_path = tmp_path / ".claude" / "contrib" / "agent-event-bus" / "data.db"
 
         # Don't create old DB
         monkeypatch.setattr(storage_module, "OLD_DB_PATH", old_path)
+        monkeypatch.setattr(storage_module, "OLD_CONTRIB_DB_PATH", tmp_path / "nonexistent")
         monkeypatch.setattr(storage_module, "DEFAULT_DB_PATH", new_path)
 
         # Initialize storage - should create fresh DB
@@ -727,10 +729,10 @@ class TestDbLocationMigration:
 
     def test_no_migration_when_new_db_already_exists(self, tmp_path, monkeypatch):
         """Test that migration is skipped if new DB already exists."""
-        import event_bus.storage as storage_module
+        import agent_event_bus.storage as storage_module
 
         old_path = tmp_path / ".claude" / "event-bus.db"
-        new_path = tmp_path / ".claude" / "contrib" / "event-bus" / "data.db"
+        new_path = tmp_path / ".claude" / "contrib" / "agent-event-bus" / "data.db"
 
         # Create old DB
         old_path.parent.mkdir(parents=True)
@@ -771,6 +773,7 @@ class TestDbLocationMigration:
         conn.close()
 
         monkeypatch.setattr(storage_module, "OLD_DB_PATH", old_path)
+        monkeypatch.setattr(storage_module, "OLD_CONTRIB_DB_PATH", tmp_path / "nonexistent")
         monkeypatch.setattr(storage_module, "DEFAULT_DB_PATH", new_path)
 
         # Initialize storage - should NOT overwrite existing new DB

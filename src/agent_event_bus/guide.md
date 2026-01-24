@@ -1,8 +1,8 @@
-# Event Bus Usage Guide
+# Agent Event Bus Usage Guide
 
 ## What is this?
 
-The Event Bus enables communication between Claude Code sessions. When running multiple
+The Agent Event Bus enables communication between Claude Code sessions. When running multiple
 CC sessions (e.g., in separate terminals or worktrees), this MCP server lets sessions:
 
 - See what other sessions are active
@@ -137,7 +137,7 @@ When running across multiple machines via Tailscale, the server requires identit
 - Direct requests to `localhost:8080` are rejected with 401
 - Only devices on your Tailnet can connect
 
-For local-only setups, set `EVENT_BUS_AUTH_DISABLED=1` to bypass auth.
+For local-only setups, set `AGENT_EVENT_BUS_AUTH_DISABLED=1` to bypass auth.
 
 See `docs/TAILSCALE_SETUP.md` for full setup instructions.
 

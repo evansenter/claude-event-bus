@@ -7,9 +7,9 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from event_bus.storage import SQLiteStorage
+    from agent_event_bus.storage import SQLiteStorage
 
-logger = logging.getLogger("event-bus")
+logger = logging.getLogger("agent-event-bus")
 
 
 def _get_storage() -> SQLiteStorage:
@@ -18,7 +18,7 @@ def _get_storage() -> SQLiteStorage:
     Uses late import to avoid circular dependency (server imports middleware).
     Returns the same SQLiteStorage instance used by the MCP tools.
     """
-    from event_bus.server import storage
+    from agent_event_bus.server import storage
 
     return storage
 

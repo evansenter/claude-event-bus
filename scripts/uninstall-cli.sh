@@ -1,12 +1,12 @@
 #!/bin/bash
-# Uninstall event-bus-cli from ~/.local/bin
+# Uninstall agent-event-bus-cli from ~/.local/bin
 
-CLI_PATH="$HOME/.local/bin/event-bus-cli"
+CLI_PATH="$HOME/.local/bin/agent-event-bus-cli"
 
 if [[ ! -e "$CLI_PATH" && ! -L "$CLI_PATH" ]]; then
-    echo "event-bus-cli not installed."
+    echo "agent-event-bus-cli not installed."
     exit 0
 fi
 
 rm -f "$CLI_PATH"
-echo "Removed event-bus-cli from ~/.local/bin"
+echo "Removed agent-event-bus-cli from ~/.local/bin"

@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from event_bus import server
+from agent_event_bus import server
 
 # Access the underlying functions from FunctionTool wrappers
 register_session = server.register_session.fn
@@ -17,9 +17,9 @@ notify = server.notify.fn
 class TestNotify:
     """Tests for notify tool."""
 
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_macos_terminal_notifier(self, mock_run, mock_which, mock_system):
         """Test notification on macOS with terminal-notifier."""
         mock_system.return_value = "Darwin"
@@ -38,9 +38,9 @@ class TestNotify:
         assert "-sender" in call_args
         assert "com.apple.Terminal" in call_args
 
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_macos_terminal_notifier_with_sound(self, mock_run, mock_which, mock_system):
         """Test notification with sound on macOS using terminal-notifier."""
         mock_system.return_value = "Darwin"
@@ -53,11 +53,11 @@ class TestNotify:
         assert "-sound" in call_args
         assert "default" in call_args
 
-    @patch.dict(os.environ, {"EVENT_BUS_ICON": "/tmp/test-icon.png"})
-    @patch("event_bus.helpers.os.path.exists")
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch.dict(os.environ, {"AGENT_EVENT_BUS_ICON": "/tmp/test-icon.png"})
+    @patch("agent_event_bus.helpers.os.path.exists")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_macos_with_custom_icon(self, mock_run, mock_which, mock_system, mock_exists):
         """Test notification with custom icon."""
         mock_system.return_value = "Darwin"
@@ -71,9 +71,9 @@ class TestNotify:
         assert "-appIcon" in call_args
         assert "/tmp/test-icon.png" in call_args
 
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_macos_osascript_fallback(self, mock_run, mock_which, mock_system):
         """Test notification falls back to osascript when terminal-notifier not available."""
         mock_system.return_value = "Darwin"
@@ -86,9 +86,9 @@ class TestNotify:
         call_args = mock_run.call_args[0][0]
         assert call_args[0] == "osascript"
 
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_macos_osascript_with_sound(self, mock_run, mock_which, mock_system):
         """Test notification with sound using osascript fallback."""
         mock_system.return_value = "Darwin"
@@ -101,9 +101,9 @@ class TestNotify:
         assert "sound name" in call_args[2]
 
     @patch.dict(os.environ, {"DISPLAY": ":0"})
-    @patch("event_bus.helpers.platform.system")
-    @patch("event_bus.helpers.shutil.which")
-    @patch("event_bus.helpers.subprocess.run")
+    @patch("agent_event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.shutil.which")
+    @patch("agent_event_bus.helpers.subprocess.run")
     def test_notify_linux(self, mock_run, mock_which, mock_system):
         """Test notification on Linux with display."""
         mock_system.return_value = "Linux"
@@ -118,7 +118,7 @@ class TestNotify:
         assert call_args == ["notify-send", "Test", "Hello"]
 
     @patch.dict(os.environ, {"DISPLAY": "", "DBUS_SESSION_BUS_ADDRESS": ""}, clear=False)
-    @patch("event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.platform.system")
     def test_notify_linux_headless(self, mock_system):
         """Test notification skipped on headless Linux."""
         mock_system.return_value = "Linux"
@@ -127,7 +127,7 @@ class TestNotify:
 
         assert result["success"] is False
 
-    @patch("event_bus.helpers.platform.system")
+    @patch("agent_event_bus.helpers.platform.system")
     def test_notify_unsupported_platform(self, mock_system):
         """Test notification on unsupported platform."""
         mock_system.return_value = "Windows"
@@ -141,7 +141,7 @@ class TestNotify:
 class TestAutoNotifyOnDM:
     """Tests for auto-notify on direct messages."""
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_triggers_notification(self, mock_notify):
         """Test that DM to a session triggers notification."""
         # Register target session
@@ -168,7 +168,7 @@ class TestAutoNotifyOnDM:
         assert "sender-session" in call_kwargs["message"]  # Message includes sender name
         assert "Can you review my code?" in call_kwargs["message"]  # Message includes payload
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_to_nonexistent_session_no_notification(self, mock_notify):
         """Test that DM to nonexistent session doesn't trigger notification."""
         publish_event(
@@ -180,7 +180,7 @@ class TestAutoNotifyOnDM:
         # No notification should be sent
         mock_notify.assert_not_called()
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_broadcast_no_notification(self, mock_notify):
         """Test that broadcast doesn't trigger notification."""
         publish_event(
@@ -192,7 +192,7 @@ class TestAutoNotifyOnDM:
         # No notification should be sent
         mock_notify.assert_not_called()
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_truncates_long_payload(self, mock_notify):
         """Test that DM notification truncates long payloads."""
         target = register_session(name="target", machine="test", cwd="/test")
@@ -216,7 +216,7 @@ class TestAutoNotifyOnDM:
         # Verify some portion of payload is present
         assert "xxx" in message  # At least some x's
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_notification_failure_still_publishes_event(self, mock_notify):
         """Test that notification failures don't prevent event publishing."""
         mock_notify.side_effect = Exception("Notification system error")
@@ -237,7 +237,7 @@ class TestAutoNotifyOnDM:
         event_types = [e["event_type"] for e in result["events"]]
         assert "test" in event_types
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_from_anonymous_sender(self, mock_notify):
         """Test that DM from anonymous sender shows 'anonymous' in notification."""
         target = register_session(name="target", machine="test", cwd="/test")
@@ -256,7 +256,7 @@ class TestAutoNotifyOnDM:
         assert "anonymous" in call_kwargs["message"]
         assert "anonymous message" in call_kwargs["message"]
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_from_deleted_sender_session(self, mock_notify):
         """Test that DM from deleted sender session shows anonymous."""
         target = register_session(name="target", machine="test", cwd="/test")
@@ -274,7 +274,7 @@ class TestAutoNotifyOnDM:
         call_kwargs = mock_notify.call_args.kwargs
         assert "anonymous" in call_kwargs["message"]
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_repo_channel_no_notification(self, mock_notify):
         """Test that repo channel doesn't trigger notification."""
         register_session(name="target", machine="test", cwd="/test/myrepo")
@@ -287,7 +287,7 @@ class TestAutoNotifyOnDM:
 
         mock_notify.assert_not_called()
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_machine_channel_no_notification(self, mock_notify):
         """Test that machine channel doesn't trigger notification."""
         publish_event(
@@ -298,7 +298,7 @@ class TestAutoNotifyOnDM:
 
         mock_notify.assert_not_called()
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_with_empty_payload(self, mock_notify):
         """Test that DM with empty payload still notifies."""
         target = register_session(name="target", machine="test", cwd="/test")
@@ -315,7 +315,7 @@ class TestAutoNotifyOnDM:
         # Should still have sender info even with empty payload
         assert "From:" in call_kwargs["message"]
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_with_very_long_session_name(self, mock_notify):
         """Test notification with very long session name in title."""
         very_long_name = "a" * 200
@@ -333,7 +333,7 @@ class TestAutoNotifyOnDM:
         # Title should contain the long name
         assert very_long_name in call_kwargs["title"]
 
-    @patch("event_bus.server.send_notification")
+    @patch("agent_event_bus.server.send_notification")
     def test_dm_with_special_characters(self, mock_notify):
         """Test notification handles emoji and special characters."""
         target = register_session(name="target", machine="test", cwd="/test")

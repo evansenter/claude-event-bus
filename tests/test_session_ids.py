@@ -1,7 +1,7 @@
 """Tests for session_ids module (Docker-style display ID generation)."""
 
-from event_bus.middleware import _is_human_readable_id
-from event_bus.session_ids import ADJECTIVES, ANIMALS, generate_session_id
+from agent_event_bus.middleware import _is_human_readable_id
+from agent_event_bus.session_ids import ADJECTIVES, ANIMALS, generate_session_id
 
 
 class TestGenerateSessionId:

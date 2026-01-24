@@ -1,55 +1,55 @@
 #!/usr/bin/env python3
-"""CLI wrapper for event bus - for use in shell scripts and automation.
+"""CLI wrapper for agent event bus - for use in shell scripts and automation.
 
 Usage:
-    event-bus-cli register [--name NAME] [--client-id ID]
-    event-bus-cli unregister [--session-id ID | --client-id ID]
-    event-bus-cli sessions
-    event-bus-cli channels
-    event-bus-cli publish --type TYPE --payload PAYLOAD [--channel CHANNEL] [--session-id ID]
-    event-bus-cli events [--cursor CURSOR] [--session-id ID] [--limit N] [--include T1,T2]
+    agent-event-bus-cli register [--name NAME] [--client-id ID]
+    agent-event-bus-cli unregister [--session-id ID | --client-id ID]
+    agent-event-bus-cli sessions
+    agent-event-bus-cli channels
+    agent-event-bus-cli publish --type TYPE --payload PAYLOAD [--channel CHANNEL] [--session-id ID]
+    agent-event-bus-cli events [--cursor CURSOR] [--session-id ID] [--limit N] [--include T1,T2]
                          [--exclude T1,T2] [--timeout MS] [--json] [--order asc|desc]
                          [--channel CHANNEL] [--resume]
-    event-bus-cli notify --title TITLE --message MSG [--sound]
+    agent-event-bus-cli notify --title TITLE --message MSG [--sound]
 
 Examples:
     # Register a session
-    event-bus-cli register --name "my-feature" --client-id "abc123"
+    agent-event-bus-cli register --name "my-feature" --client-id "abc123"
 
     # Unregister by session_id or client_id
-    event-bus-cli unregister --session-id abc123
-    event-bus-cli unregister --client-id abc123
+    agent-event-bus-cli unregister --session-id abc123
+    agent-event-bus-cli unregister --client-id abc123
 
     # List active sessions
-    event-bus-cli sessions
+    agent-event-bus-cli sessions
 
     # List active channels
-    event-bus-cli channels
+    agent-event-bus-cli channels
 
     # Publish an event
-    event-bus-cli publish --type "task_done" --payload "Finished API" --channel "repo:my-project"
+    agent-event-bus-cli publish --type "task_done" --payload "Finished API" --channel "repo:my-project"
 
     # Get recent events (newest first by default)
-    event-bus-cli events --session-id abc123
+    agent-event-bus-cli events --session-id abc123
 
     # Get events with JSON output (for scripting)
-    event-bus-cli events --json --limit 10 --exclude session_registered,session_unregistered
+    agent-event-bus-cli events --json --limit 10 --exclude session_registered,session_unregistered
 
     # Get events in chronological order (oldest first)
-    event-bus-cli events --order asc
+    agent-event-bus-cli events --order asc
 
     # Get events from a specific channel
-    event-bus-cli events --channel "repo:my-project"
+    agent-event-bus-cli events --channel "repo:my-project"
 
     # Resume from saved cursor (incremental polling - no duplicates)
-    event-bus-cli events --session-id abc123 --resume --order asc
+    agent-event-bus-cli events --session-id abc123 --resume --order asc
 
     # Filter by event type
-    event-bus-cli events --include task_completed,ci_completed
-    event-bus-cli events --include gotcha_discovered,pattern_found --exclude session_registered
+    agent-event-bus-cli events --include task_completed,ci_completed
+    agent-event-bus-cli events --include gotcha_discovered,pattern_found --exclude session_registered
 
     # Send notification
-    event-bus-cli notify --title "Build Complete" --message "All tests passed"
+    agent-event-bus-cli notify --title "Build Complete" --message "All tests passed"
 """
 
 import argparse
@@ -112,8 +112,8 @@ def call_tool(
                 return result
         return {}
     except requests.exceptions.ConnectionError:
-        print("Error: Cannot connect to event bus. Is it running?", file=sys.stderr)
-        print("Start with: event-bus", file=sys.stderr)
+        print("Error: Cannot connect to agent event bus. Is it running?", file=sys.stderr)
+        print("Start with: agent-event-bus", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         if debug:
@@ -300,7 +300,7 @@ def main():
     )
     parser.add_argument(
         "--url",
-        default=os.environ.get("EVENT_BUS_URL", DEFAULT_URL),
+        default=os.environ.get("AGENT_EVENT_BUS_URL", DEFAULT_URL),
         help="Event bus URL (default: http://127.0.0.1:8080/mcp)",
     )
     parser.add_argument(

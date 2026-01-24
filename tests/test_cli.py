@@ -5,14 +5,14 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from agent_event_bus import cli
 from conftest import make_events_args
-from event_bus import cli
 
 
 class TestCallTool:
     """Tests for call_tool function."""
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_successful_call_structured_content(self, mock_post):
         """Test successful tool call with structured content response."""
         mock_response = MagicMock()
@@ -25,7 +25,7 @@ class TestCallTool:
         assert result == {"session_id": "abc123", "name": "test"}
         mock_post.assert_called_once()
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_successful_call_text_content(self, mock_post):
         """Test successful tool call with text content response."""
         mock_response = MagicMock()
@@ -37,7 +37,7 @@ class TestCallTool:
 
         assert result == {"success": True}
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_connection_error(self, mock_post):
         """Test connection error handling."""
         import requests
@@ -49,7 +49,7 @@ class TestCallTool:
 
         assert exc_info.value.code == 1
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_empty_response(self, mock_post):
         """Test handling of empty response."""
         mock_response = MagicMock()
@@ -61,7 +61,7 @@ class TestCallTool:
 
         assert result == {}
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_debug_false_prints_error_and_exits(self, mock_post, capsys):
         """Test that debug=False (default) prints error and exits."""
         mock_post.side_effect = ValueError("Something went wrong")
@@ -73,7 +73,7 @@ class TestCallTool:
         captured = capsys.readouterr()
         assert "Something went wrong" in captured.err
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_debug_true_propagates_exception(self, mock_post):
         """Test that debug=True causes exception to propagate."""
         mock_post.side_effect = ValueError("Something went wrong")
@@ -83,7 +83,7 @@ class TestCallTool:
 
         assert "Something went wrong" in str(exc_info.value)
 
-    @patch("event_bus.cli.requests.post")
+    @patch("agent_event_bus.cli.requests.post")
     def test_multiline_sse_response(self, mock_post):
         """Test parsing multiline SSE response."""
         mock_response = MagicMock()
@@ -103,8 +103,8 @@ class TestCallTool:
 class TestCmdRegister:
     """Tests for register command."""
 
-    @patch("event_bus.cli.call_tool")
-    @patch("event_bus.cli.os.getcwd")
+    @patch("agent_event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.os.getcwd")
     def test_register_with_name(self, mock_getcwd, mock_call):
         """Test register with explicit name."""
         mock_getcwd.return_value = "/home/user/project"
@@ -120,8 +120,8 @@ class TestCmdRegister:
             debug=False,
         )
 
-    @patch("event_bus.cli.call_tool")
-    @patch("event_bus.cli.os.getcwd")
+    @patch("agent_event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.os.getcwd")
     def test_register_default_name(self, mock_getcwd, mock_call):
         """Test register with default name from directory."""
         mock_getcwd.return_value = "/home/user/my-project"
@@ -137,8 +137,8 @@ class TestCmdRegister:
             debug=False,
         )
 
-    @patch("event_bus.cli.call_tool")
-    @patch("event_bus.cli.os.getcwd")
+    @patch("agent_event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.os.getcwd")
     def test_register_with_client_id(self, mock_getcwd, mock_call):
         """Test register with client_id."""
         mock_getcwd.return_value = "/home/user/project"
@@ -154,7 +154,7 @@ class TestCmdRegister:
 class TestCmdUnregister:
     """Tests for unregister command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_unregister_by_session_id(self, mock_call):
         """Test unregister session by session_id."""
         mock_call.return_value = {"success": True, "session_id": "abc123"}
@@ -169,7 +169,7 @@ class TestCmdUnregister:
             debug=False,
         )
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_unregister_by_client_id(self, mock_call):
         """Test unregister session by client_id."""
         mock_call.return_value = {"success": True, "session_id": "abc123"}
@@ -197,7 +197,7 @@ class TestCmdUnregister:
 class TestCmdSessions:
     """Tests for sessions command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_sessions_empty(self, mock_call, capsys):
         """Test listing no sessions."""
         mock_call.return_value = []
@@ -208,7 +208,7 @@ class TestCmdSessions:
         captured = capsys.readouterr()
         assert "No active sessions" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_sessions_list(self, mock_call, capsys):
         """Test listing sessions."""
         mock_call.return_value = [
@@ -235,7 +235,7 @@ class TestCmdSessions:
 class TestCmdPublish:
     """Tests for publish command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_publish_basic(self, mock_call):
         """Test basic publish."""
         mock_call.return_value = {"event_id": 1}
@@ -252,7 +252,7 @@ class TestCmdPublish:
             debug=False,
         )
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_publish_with_channel(self, mock_call):
         """Test publish with channel."""
         mock_call.return_value = {"event_id": 1}
@@ -275,7 +275,7 @@ class TestCmdPublish:
 class TestCmdEvents:
     """Tests for events command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_empty(self, mock_call, capsys):
         """Test getting no events."""
         mock_call.return_value = {"events": [], "next_cursor": None}
@@ -286,7 +286,7 @@ class TestCmdEvents:
         captured = capsys.readouterr()
         assert "No events" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_list(self, mock_call, capsys):
         """Test getting events."""
         mock_call.return_value = {
@@ -310,7 +310,7 @@ class TestCmdEvents:
         assert "[1] test_event (all)" in captured.out
         assert "hello world" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_with_filtering(self, mock_call):
         """Test events with session filtering."""
         mock_call.return_value = {"events": [], "next_cursor": "5"}
@@ -322,7 +322,7 @@ class TestCmdEvents:
         assert call_args["cursor"] == "5"
         assert call_args["session_id"] == "abc123"
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_json_output(self, mock_call, capsys):
         """Test JSON output format."""
         import json
@@ -352,7 +352,7 @@ class TestCmdEvents:
         assert len(output["events"]) == 1
         assert output["events"][0]["event_type"] == "test_event"
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_json_empty(self, mock_call, capsys):
         """Test JSON output with no events."""
         import json
@@ -367,7 +367,7 @@ class TestCmdEvents:
         assert output["events"] == []
         assert output["next_cursor"] == "10"  # Preserves cursor when no events
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_exclude_types(self, mock_call, capsys):
         """Test excluding event types."""
         mock_call.return_value = {
@@ -412,7 +412,7 @@ class TestCmdEvents:
         # next_cursor comes from the API, filtering happens client-side
         assert output["next_cursor"] == "1"
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_include_types(self, mock_call, capsys):
         """Test --include flag passes event_types to server."""
         mock_call.return_value = {
@@ -436,7 +436,7 @@ class TestCmdEvents:
         call_args = mock_call.call_args[0][1]
         assert call_args["event_types"] == ["task_completed", "ci_completed"]
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_limit(self, mock_call):
         """Test limit parameter is passed through."""
         mock_call.return_value = {"events": [], "next_cursor": None}
@@ -447,7 +447,7 @@ class TestCmdEvents:
         call_args = mock_call.call_args[0][1]
         assert call_args["limit"] == 5
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_timeout(self, mock_call):
         """Test timeout parameter is passed to call_tool."""
         mock_call.return_value = {"events": [], "next_cursor": None}
@@ -470,7 +470,7 @@ class TestCmdEvents:
         captured = capsys.readouterr()
         assert "--resume requires --session-id" in captured.err
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_resume_with_session_id_works(self, mock_call, capsys):
         """Test that --resume with --session-id works correctly."""
         mock_call.return_value = {"events": [], "next_cursor": "100"}
@@ -487,7 +487,7 @@ class TestCmdEvents:
 class TestCmdNotify:
     """Tests for notify command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_notify_success(self, mock_call, capsys):
         """Test successful notification."""
         mock_call.return_value = {"success": True}
@@ -498,7 +498,7 @@ class TestCmdNotify:
         captured = capsys.readouterr()
         assert "Notification sent" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_notify_failure(self, mock_call):
         """Test failed notification."""
         mock_call.return_value = {"success": False}
@@ -510,7 +510,7 @@ class TestCmdNotify:
 
         assert exc_info.value.code == 1
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_notify_with_sound(self, mock_call, capsys):
         """Test notification with sound."""
         mock_call.return_value = {"success": True}
@@ -532,7 +532,7 @@ class TestMainArgumentParsing:
         with patch.object(
             sys, "argv", ["cli", "register", "--name", "test", "--client-id", "abc123"]
         ):
-            with patch("event_bus.cli.cmd_register") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_register") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
 
@@ -545,7 +545,7 @@ class TestMainArgumentParsing:
         import sys
 
         with patch.object(sys, "argv", ["cli", "unregister", "--session-id", "abc123"]):
-            with patch("event_bus.cli.cmd_unregister") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_unregister") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
 
@@ -570,7 +570,7 @@ class TestMainArgumentParsing:
                 "repo:test",
             ],
         ):
-            with patch("event_bus.cli.cmd_publish") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_publish") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
 
@@ -586,7 +586,7 @@ class TestMainArgumentParsing:
         with patch.object(
             sys, "argv", ["cli", "notify", "--title", "Alert", "--message", "Hi", "--sound"]
         ):
-            with patch("event_bus.cli.cmd_notify") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_notify") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
 
@@ -600,7 +600,7 @@ class TestMainArgumentParsing:
         import sys
 
         with patch.object(sys, "argv", ["cli", "--url", "http://custom:9999/mcp", "sessions"]):
-            with patch("event_bus.cli.cmd_sessions") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_sessions") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
                 # URL is passed to argument parser, verified it doesn't error
@@ -610,7 +610,7 @@ class TestMainArgumentParsing:
 class TestCmdChannels:
     """Tests for channels command."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_channels_empty(self, mock_call, capsys):
         """Test listing no channels."""
         mock_call.return_value = []
@@ -621,7 +621,7 @@ class TestCmdChannels:
         captured = capsys.readouterr()
         assert "No active channels" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_channels_list(self, mock_call, capsys):
         """Test listing channels."""
         mock_call.return_value = [
@@ -641,7 +641,7 @@ class TestCmdChannels:
         assert "session:abc123" in captured.out
         assert "1 subscriber)" in captured.out  # Singular form
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_channels_calls_list_channels_tool(self, mock_call):
         """Test that channels command calls list_channels tool."""
         mock_call.return_value = []
@@ -655,7 +655,7 @@ class TestCmdChannels:
 class TestCmdSessionsWithChannels:
     """Tests for sessions command with subscribed_channels."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_sessions_shows_channels(self, mock_call, capsys):
         """Test that sessions command shows subscribed_channels."""
         mock_call.return_value = [
@@ -681,7 +681,7 @@ class TestCmdSessionsWithChannels:
         captured = capsys.readouterr()
         assert "channels: all, session:abc123, repo:my-repo, machine:my-machine" in captured.out
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_sessions_handles_missing_channels(self, mock_call, capsys):
         """Test that sessions command handles missing subscribed_channels gracefully."""
         mock_call.return_value = [
@@ -708,7 +708,7 @@ class TestCmdSessionsWithChannels:
 class TestCmdEventsWithChannel:
     """Tests for events command with channel filter."""
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_with_channel_filter(self, mock_call):
         """Test events with channel filter."""
         mock_call.return_value = {"events": [], "next_cursor": None}
@@ -719,7 +719,7 @@ class TestCmdEventsWithChannel:
         call_args = mock_call.call_args[0][1]
         assert call_args["channel"] == "repo:my-repo"
 
-    @patch("event_bus.cli.call_tool")
+    @patch("agent_event_bus.cli.call_tool")
     def test_events_without_channel_filter(self, mock_call):
         """Test events without channel filter (default behavior)."""
         mock_call.return_value = {"events": [], "next_cursor": None}
@@ -739,7 +739,7 @@ class TestCmdEventsWithChannel:
             "argv",
             ["cli", "events", "--channel", "repo:my-repo"],
         ):
-            with patch("event_bus.cli.cmd_events") as mock_cmd:
+            with patch("agent_event_bus.cli.cmd_events") as mock_cmd:
                 mock_cmd.return_value = None
                 cli.main()
 

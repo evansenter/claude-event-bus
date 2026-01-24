@@ -124,7 +124,7 @@ Do not include any other text, just the four numbers."#;
     println!("Saved: {}", path.display());
 
     println!("\nDone! Test with:");
-    println!("  EVENT_BUS_ICON={}/icon-512.png terminal-notifier -title Test -message Hi -sender com.apple.Terminal -appIcon {}/icon-512.png",
+    println!("  AGENT_EVENT_BUS_ICON={}/icon-512.png terminal-notifier -title Test -message Hi -sender com.apple.Terminal -appIcon {}/icon-512.png",
              assets_dir.display(), assets_dir.display());
 
     Ok(())
