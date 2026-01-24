@@ -4,8 +4,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SERVICE_DEST="$HOME/.config/systemd/user/claude-event-bus.service"
-SERVICE_NAME="claude-event-bus"
+SERVICE_DEST="$HOME/.config/systemd/user/agent-event-bus.service"
+SERVICE_NAME="agent-event-bus"
 
 # Stop and disable service if running
 if systemctl --user is-active "$SERVICE_NAME" &>/dev/null; then

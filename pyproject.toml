@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "claude-event-bus"
+name = "agent-event-bus"
 version = "0.1.0"
 description = "MCP server for cross-session Claude Code communication"
 readme = "README.md"

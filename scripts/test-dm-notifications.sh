@@ -88,7 +88,7 @@ echo "  ✓ Event published"
 echo
 
 echo -e "${YELLOW}⚠️  Did you see a macOS notification?${NC}"
-echo "  Title should be: 📨 test-receiver • claude-event-bus"
+echo "  Title should be: 📨 test-receiver • agent-event-bus"
 echo "  Message should contain: From: test-sender"
 echo "  And a preview of the DM message"
 echo
@@ -133,7 +133,7 @@ $CLI publish \
     --type "test" \
     --payload "Repo message" \
     --session-id "$SESSION_A_ID" \
-    --channel "repo:claude-event-bus" > /dev/null
+    --channel "repo:agent-event-bus" > /dev/null
 echo "  ✓ Published to repo channel (should NOT show notification)"
 echo
 
@@ -149,7 +149,7 @@ echo "  ✓ Session cleanup (via EXIT trap)"
 echo
 echo -e "${YELLOW}Manual verification needed:${NC}"
 echo "  1. Did you see notifications for DMs to session:$SESSION_B_ID?"
-echo "  2. Did you NOT see notification for repo:claude-event-bus?"
+echo "  2. Did you NOT see notification for repo:agent-event-bus?"
 echo
 echo "Check server logs for any warnings:"
 echo "  tail -f ~/.claude/contrib/event-bus/event-bus.log"

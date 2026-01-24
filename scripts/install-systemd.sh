@@ -6,10 +6,10 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 VENV_PYTHON="$PROJECT_DIR/.venv/bin/python"
-SERVICE_TEMPLATE="$SCRIPT_DIR/claude-event-bus.service"
+SERVICE_TEMPLATE="$SCRIPT_DIR/agent-event-bus.service"
 SERVICE_DIR="$HOME/.config/systemd/user"
-SERVICE_DEST="$SERVICE_DIR/claude-event-bus.service"
-SERVICE_NAME="claude-event-bus"
+SERVICE_DEST="$SERVICE_DIR/agent-event-bus.service"
+SERVICE_NAME="agent-event-bus"
 
 # Check venv exists
 if [[ ! -f "$VENV_PYTHON" ]]; then

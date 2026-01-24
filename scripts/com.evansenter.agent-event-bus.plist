@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.evansenter.claude-event-bus</string>
+    <string>com.evansenter.agent-event-bus</string>
 
     <key>ProgramArguments</key>
     <array>

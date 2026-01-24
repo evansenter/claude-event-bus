@@ -3,8 +3,8 @@
 
 set -e
 
-PLIST_DEST="$HOME/Library/LaunchAgents/com.evansenter.claude-event-bus.plist"
-LABEL="com.evansenter.claude-event-bus"
+PLIST_DEST="$HOME/Library/LaunchAgents/com.evansenter.agent-event-bus.plist"
+LABEL="com.evansenter.agent-event-bus"
 
 if [[ ! -f "$PLIST_DEST" ]]; then
     echo "LaunchAgent not installed."

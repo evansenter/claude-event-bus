@@ -35,8 +35,8 @@ Run these steps on the machine hosting event-bus (e.g., a VM, homelab server).
 ### 1. Install event-bus
 
 ```bash
-git clone https://github.com/evansenter/claude-event-bus.git
-cd claude-event-bus
+git clone https://github.com/evansenter/agent-event-bus.git
+cd agent-event-bus
 make install
 ```
 
@@ -80,8 +80,8 @@ Run these steps on each machine that will connect to the event-bus (e.g., your l
 ### 1. Install CLI only (no local server)
 
 ```bash
-git clone https://github.com/evansenter/claude-event-bus.git
-cd claude-event-bus
+git clone https://github.com/evansenter/agent-event-bus.git
+cd agent-event-bus
 make install-cli
 ```
 
@@ -135,8 +135,8 @@ event-bus-cli sessions
 If you only need event-bus on a single machine (no remote access):
 
 ```bash
-git clone https://github.com/evansenter/claude-event-bus.git
-cd claude-event-bus
+git clone https://github.com/evansenter/agent-event-bus.git
+cd agent-event-bus
 make install
 ```
 
@@ -162,7 +162,7 @@ Check your URL is using the Tailscale hostname, not an IP address.
 ### Connection refused
 
 1. Verify tailscale serve is running: `tailscale serve status`
-2. Verify event-bus is running: `systemctl --user status claude-event-bus` (Linux) or check LaunchAgent (macOS)
+2. Verify event-bus is running: `systemctl --user status agent-event-bus` (Linux) or check LaunchAgent (macOS)
 3. Verify Tailscale connectivity: `tailscale ping YOUR-SERVER`
 
 ### MCP tools not appearing in Claude Code
