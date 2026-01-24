@@ -321,6 +321,13 @@ class TailscaleAuthMiddleware:
             await self.app(scope, receive, send)
             return
 
+        # Allow localhost connections without auth (CLI, local MCP)
+        client = scope.get("client", ("", 0))
+        client_ip = client[0] if client else ""
+        if client_ip in ("127.0.0.1", "::1", "localhost"):
+            await self.app(scope, receive, send)
+            return
+
         # Check for Tailscale identity header
         headers = dict(scope.get("headers", []))
         tailscale_user = headers.get(self.TAILSCALE_USER_HEADER)
