@@ -5,18 +5,18 @@ This guide covers running agent-event-bus across multiple machines using Tailsca
 ## Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     Your Tailnet                            │
-│                                                             │
-│  ┌──────────────┐         ┌──────────────────────────────┐  │
-│  │ Mac (client) │         │ Server (e.g., speck-vm)      │  │
-│  │              │         │                              │  │
-│  │ Claude Code  │ ──────► │ tailscale serve (:443)       │  │
-│  │     ↓        │  HTTPS  │       ↓                      │  │
-│  │ MCP client   │         │ agent-event-bus (:8080)      │  │
-│  └──────────────┘         └──────────────────────────────┘  │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                        Your Tailnet                             │
+│                                                                 │
+│  ┌──────────────┐         ┌──────────────────────────────────┐  │
+│  │ Mac (client) │         │ Server (e.g., speck-vm)          │  │
+│  │              │         │                                  │  │
+│  │ Claude Code  │ ──────► │ tailscale serve (:443)           │  │
+│  │     ↓        │  HTTPS  │   /agent-event-bus → :8080       │  │
+│  │ MCP client   │         │   /agent-session-analytics → ... │  │
+│  └──────────────┘         └──────────────────────────────────┘  │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 **How it works:**
@@ -45,23 +45,25 @@ This installs the service (LaunchAgent on macOS, systemd on Linux) bound to `loc
 ### 2. Set up Tailscale serve
 
 ```bash
-# Proxy HTTPS traffic to localhost:8080
-tailscale serve --bg 8080
+# Proxy HTTPS traffic to localhost:8080 via path-based routing
+tailscale serve --bg --set-path /agent-event-bus http://127.0.0.1:8080
 ```
 
 Verify it's running:
 ```bash
 tailscale serve status
-# Should show: https://HOSTNAME.TAILNET.ts.net -> localhost:8080
+# Should show: https://HOSTNAME.TAILNET.ts.net/agent-event-bus -> localhost:8080
 ```
 
-Note your server's Tailscale URL (e.g., `https://speck-vm.tailac7b3c.ts.net`).
+Note your server's Tailscale URL (e.g., `https://speck-vm.tailac7b3c.ts.net/agent-event-bus/mcp`).
+
+> **Note:** Path-based routing allows multiple MCP servers on one host. For example, you can also run agent-session-analytics at `/agent-session-analytics`.
 
 ### 3. Verify the setup
 
 ```bash
 # From the server itself (should work - has identity headers via loopback)
-curl https://$(tailscale status --json | jq -r '.Self.DNSName' | sed 's/\.$//')/mcp \
+curl https://$(tailscale status --json | jq -r '.Self.DNSName' | sed 's/\.$//')/agent-event-bus/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 ```
@@ -82,7 +84,7 @@ Run these steps on each machine that will connect to the agent-event-bus (e.g., 
 ```bash
 git clone https://github.com/evansenter/agent-event-bus.git
 cd agent-event-bus
-make install-client REMOTE_URL=https://YOUR-SERVER.TAILNET.ts.net/mcp
+make install-client REMOTE_URL=https://YOUR-SERVER.TAILNET.ts.net/agent-event-bus/mcp
 ```
 
 This installs the CLI and configures Claude Code MCP to use the remote server.
@@ -92,7 +94,7 @@ This installs the CLI and configures Claude Code MCP to use the remote server.
 Add to your shell profile (`~/.zshrc`, `~/.bashrc`, or `~/.extra`):
 
 ```bash
-export AGENT_EVENT_BUS_URL="https://YOUR-SERVER.TAILNET.ts.net/mcp"
+export AGENT_EVENT_BUS_URL="https://YOUR-SERVER.TAILNET.ts.net/agent-event-bus/mcp"
 ```
 
 Or add to Claude Code settings (`~/.claude/settings.json`):
@@ -100,7 +102,7 @@ Or add to Claude Code settings (`~/.claude/settings.json`):
 ```json
 {
   "env": {
-    "AGENT_EVENT_BUS_URL": "https://YOUR-SERVER.TAILNET.ts.net/mcp"
+    "AGENT_EVENT_BUS_URL": "https://YOUR-SERVER.TAILNET.ts.net/agent-event-bus/mcp"
   }
 }
 ```
@@ -179,7 +181,7 @@ curl http://localhost:8080/mcp -H "Content-Type: application/json" \
 # Expected: tools list response (localhost bypasses auth)
 
 # Remote via Tailscale also works (has identity headers)
-curl https://YOUR-SERVER.TAILNET.ts.net/mcp -H "Content-Type: application/json" \
+curl https://YOUR-SERVER.TAILNET.ts.net/agent-event-bus/mcp -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 # Expected: tools list response
 
@@ -191,11 +193,11 @@ curl https://YOUR-SERVER.TAILNET.ts.net/mcp -H "Content-Type: application/json" 
 
 ## Applying to Other MCP Servers
 
-This pattern works for any MCP server (e.g., session-analytics):
+This pattern works for any MCP server (e.g., agent-session-analytics):
 
-1. **Server side:** Run `tailscale serve --bg <port>` to proxy to your server
+1. **Server side:** Run `tailscale serve --bg --set-path /<service-name> http://127.0.0.1:<port>` to proxy to your server
 2. **Add middleware:** Check for `Tailscale-User-Login` header, reject if missing
-3. **Client side:** Update MCP config to use `https://HOSTNAME.TAILNET.ts.net/path`
+3. **Client side:** Update MCP config to use `https://HOSTNAME.TAILNET.ts.net/<service-name>/mcp`
 
 The key insight: `tailscale serve` acts as a reverse proxy that handles TLS and injects identity headers, so your server code stays simple.
 
@@ -294,16 +296,16 @@ def pytest_configure(config):
 #### 4. Set up tailscale serve on the server
 
 ```bash
-# If your server runs on port 8081
-tailscale serve --bg 8081
+# If your server runs on port 8081, use path-based routing
+tailscale serve --bg --set-path /agent-session-analytics http://127.0.0.1:8081
 ```
 
 #### 5. Update client configs
 
 ```bash
 # MCP config
-claude mcp add --transport http --scope user session-analytics https://YOUR-SERVER.TAILNET.ts.net/mcp
+claude mcp add --transport http --scope user agent-session-analytics https://YOUR-SERVER.TAILNET.ts.net/agent-session-analytics/mcp
 
-# Environment variable
-export SESSION_ANALYTICS_URL="https://YOUR-SERVER.TAILNET.ts.net/mcp"
+# Environment variable (if applicable)
+export AGENT_SESSION_ANALYTICS_URL="https://YOUR-SERVER.TAILNET.ts.net/agent-session-analytics/mcp"
 ```

@@ -43,14 +43,14 @@ Connect to an event bus running on another machine (e.g., via Tailscale):
 ```bash
 git clone https://github.com/evansenter/agent-event-bus.git
 cd agent-event-bus
-make install-client REMOTE_URL=https://your-server.tailnet.ts.net/mcp
+make install-client REMOTE_URL=https://your-server.tailnet.ts.net/agent-event-bus/mcp
 ```
 
 Installs CLI and configures MCP to point to the remote server. Add the URL to your shell profile:
 
 ```bash
 # In your shell profile (~/.extra, ~/.zshrc, etc.)
-export AGENT_EVENT_BUS_URL="https://your-server.tailnet.ts.net/mcp"
+export AGENT_EVENT_BUS_URL="https://your-server.tailnet.ts.net/agent-event-bus/mcp"
 ```
 
 ### PATH
@@ -122,12 +122,12 @@ Then restart: `make restart`
 **Client machines:**
 
 ```bash
-make install-client REMOTE_URL=http://<tailscale-ip>:8080/mcp
+make install-client REMOTE_URL=https://your-server.tailnet.ts.net/agent-event-bus/mcp
 ```
 
 Then add to your shell profile:
 ```bash
-export AGENT_EVENT_BUS_URL="http://<tailscale-ip>:8080/mcp"
+export AGENT_EVENT_BUS_URL="https://your-server.tailnet.ts.net/agent-event-bus/mcp"
 ```
 
 New Claude Code sessions will have full `mcp__agent-event-bus__*` tool access to the central server.
