@@ -132,7 +132,7 @@ restart:
 				exit 1; \
 			fi; \
 		else \
-			echo "LaunchAgent not installed. Run: make install"; \
+			echo "LaunchAgent not installed. Run: make install-server"; \
 			exit 1; \
 		fi; \
 	else \
