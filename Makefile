@@ -1,4 +1,4 @@
-.PHONY: check fmt lint test clean install-server install-client uninstall dev venv restart reinstall logs
+.PHONY: check fmt lint test clean install-server install-client uninstall dev venv restart logs
 
 # Run all quality gates (format check, lint, tests)
 check: fmt lint test
@@ -32,8 +32,9 @@ venv:
 dev: venv
 	.venv/bin/pip install -e ".[dev]"
 
-# Server installation: runs the event bus service locally
+# Server installation: runs the event bus service locally (idempotent)
 # Use this on the machine that will host the event bus
+# Re-run to pick up code changes (restarts service automatically)
 install-server: venv
 	@echo "Installing server..."
 	.venv/bin/pip install -e .
@@ -64,8 +65,9 @@ install-server: venv
 		echo '  export PATH="$$HOME/.local/bin:$$PATH"'; \
 	fi
 
-# Client installation: connects to a remote event bus server
+# Client installation: connects to a remote event bus server (idempotent)
 # Usage: make install-client REMOTE_URL=https://your-server.tailnet.ts.net/mcp
+# Re-run to update remote URL or pick up CLI changes
 install-client: venv
 	@if [ -z "$(REMOTE_URL)" ]; then \
 		echo "Error: REMOTE_URL is required"; \
@@ -114,7 +116,7 @@ uninstall:
 	@echo "Uninstall complete!"
 	@echo "Note: venv and source code remain in place."
 
-# Restart the server (reload code changes)
+# Restart the server without dependency sync (faster than install-server)
 restart:
 	@if [ "$$(uname)" = "Darwin" ]; then \
 		PLIST="$$HOME/Library/LaunchAgents/com.evansenter.agent-event-bus.plist"; \
@@ -130,7 +132,7 @@ restart:
 				exit 1; \
 			fi; \
 		else \
-			echo "LaunchAgent not installed. Run: make install-server"; \
+			echo "LaunchAgent not installed. Run: make install"; \
 			exit 1; \
 		fi; \
 	else \
@@ -144,9 +146,6 @@ restart:
 			exit 1; \
 		fi; \
 	fi
-
-# Reinstall and restart (server only)
-reinstall: install-server restart
 
 # Tail the event bus log
 logs:

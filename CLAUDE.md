@@ -17,7 +17,7 @@ MCP server for cross-session Claude Code communication. Sessions register, publi
 
 ### Safe operations:
 - `make uninstall` - Preserves database
-- `make reinstall` - Just reinstalls package
+- `make install-server` - Idempotent, restarts service automatically
 - Schema migrations via `@migration` decorator (increment `SCHEMA_VERSION` when adding)
 
 ### Before schema changes:
@@ -28,16 +28,16 @@ cp ~/.claude/contrib/agent-event-bus/data.db ~/.claude/contrib/agent-event-bus/d
 ## Commands
 
 ```bash
-make install-server  # Server: runs event bus locally
-make install-client REMOTE_URL=...  # Client: connects to remote server
+make install-server  # Server: runs event bus locally (idempotent, restarts service)
+make install-client REMOTE_URL=...  # Client: connects to remote server (idempotent)
 make uninstall  # Remove everything (preserves DB)
 make dev        # Install with dev dependencies
 make check      # Format + lint + test
-make restart    # Restart LaunchAgent
+make restart    # Lightweight service restart (no dependency sync)
 ./scripts/dev.sh  # Dev mode (foreground, auto-reload)
 ```
 
-**When to restart**: Code changes to `server.py`, `storage.py`, `helpers.py` require restart. `guide.md` is read fresh each request. Dev mode auto-reloads.
+**When to restart**: Code changes to `server.py`, `storage.py`, `helpers.py` require `make install-server` (or `make restart`). `guide.md` is read fresh each request. Dev mode auto-reloads.
 
 ## Testing
 

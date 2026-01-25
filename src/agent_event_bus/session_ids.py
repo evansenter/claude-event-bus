@@ -3,6 +3,7 @@
 import random
 
 # Word lists for human-readable session IDs
+# ~50 adjectives x ~50 animals = ~2500 unique combinations
 ADJECTIVES = [
     "brave",
     "calm",
@@ -36,6 +37,24 @@ ADJECTIVES = [
     "humble",
     "jovial",
     "kind",
+    "agile",
+    "cosmic",
+    "dreamy",
+    "fierce",
+    "golden",
+    "mighty",
+    "noble",
+    "proud",
+    "quiet",
+    "royal",
+    "serene",
+    "steady",
+    "tricky",
+    "wise",
+    "amber",
+    "azure",
+    "coral",
+    "rustic",
 ]
 
 ANIMALS = [
@@ -71,6 +90,24 @@ ANIMALS = [
     "hawk",
     "iguana",
     "jay",
+    "alpaca",
+    "bison",
+    "coyote",
+    "dingo",
+    "ferret",
+    "gecko",
+    "hyena",
+    "impala",
+    "jackal",
+    "kiwi",
+    "llama",
+    "marmot",
+    "narwhal",
+    "osprey",
+    "parrot",
+    "raven",
+    "sloth",
+    "toucan",
 ]
 
 
