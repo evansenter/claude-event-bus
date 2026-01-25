@@ -218,8 +218,10 @@ def cmd_publish(args):
     }
     if args.channel:
         arguments["channel"] = args.channel
-    if args.session_id:
-        arguments["session_id"] = args.session_id
+    # Use explicit --session-id, fall back to env var
+    session_id = args.session_id or os.environ.get("AGENT_EVENT_BUS_SESSION_ID")
+    if session_id:
+        arguments["session_id"] = session_id
 
     result = call_tool("publish_event", arguments, url=args.url, debug=args.debug)
     print(json.dumps(result, indent=2))
