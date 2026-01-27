@@ -271,6 +271,39 @@ class TestCmdPublish:
         assert call_args["channel"] == "repo:my-repo"
         assert call_args["session_id"] == "abc123"
 
+    @patch("agent_event_bus.cli.call_tool")
+    @patch.dict("os.environ", {"AGENT_EVENT_BUS_SESSION_ID": "env-session-123"})
+    def test_publish_session_id_from_env(self, mock_call):
+        """Test publish uses session_id from env var when not provided."""
+        mock_call.return_value = {"event_id": 1}
+
+        args = Namespace(
+            type="test_event", payload="hello", channel=None, session_id=None, url=None, debug=False
+        )
+        cli.cmd_publish(args)
+
+        call_args = mock_call.call_args[0][1]
+        assert call_args["session_id"] == "env-session-123"
+
+    @patch("agent_event_bus.cli.call_tool")
+    @patch.dict("os.environ", {"AGENT_EVENT_BUS_SESSION_ID": "env-session-123"})
+    def test_publish_explicit_session_id_overrides_env(self, mock_call):
+        """Test explicit --session-id overrides env var."""
+        mock_call.return_value = {"event_id": 1}
+
+        args = Namespace(
+            type="test_event",
+            payload="hello",
+            channel=None,
+            session_id="explicit-123",
+            url=None,
+            debug=False,
+        )
+        cli.cmd_publish(args)
+
+        call_args = mock_call.call_args[0][1]
+        assert call_args["session_id"] == "explicit-123"
+
 
 class TestCmdEvents:
     """Tests for events command."""

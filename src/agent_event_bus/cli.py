@@ -218,8 +218,10 @@ def cmd_publish(args):
     }
     if args.channel:
         arguments["channel"] = args.channel
-    if args.session_id:
-        arguments["session_id"] = args.session_id
+    # Use explicit --session-id, fall back to env var
+    session_id = args.session_id or os.environ.get("AGENT_EVENT_BUS_SESSION_ID")
+    if session_id:
+        arguments["session_id"] = session_id
 
     result = call_tool("publish_event", arguments, url=args.url, debug=args.debug)
     print(json.dumps(result, indent=2))
@@ -341,7 +343,9 @@ def main():
     p_publish.add_argument("--type", required=True, help="Event type")
     p_publish.add_argument("--payload", required=True, help="Event payload")
     p_publish.add_argument("--channel", default="all", help="Target channel")
-    p_publish.add_argument("--session-id", help="Your session ID")
+    p_publish.add_argument(
+        "--session-id", help="Your session ID (default: $AGENT_EVENT_BUS_SESSION_ID)"
+    )
     p_publish.set_defaults(func=cmd_publish)
 
     # events
